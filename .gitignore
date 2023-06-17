@@ -1,0 +1,15 @@
+# Environment variables
+.env
+
+# Virtual environment
+.venv/
+
+# Testing
+.pytest_cache
+htmlcov/
+coverage.json
+coverage.lcov
+coverage.xml
+
+# Linting
+.ruff_cache

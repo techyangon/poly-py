@@ -1,0 +1,29 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.isort]
+combine_as_imports = true
+profile = "black"
+
+[tool.poetry]
+authors = ["Zaw W. Lwin <zaw.waiyan.lwin96@gmail.com>"]
+description = "Poly Learning Management Platform"
+name = "poly"
+packages = [{from = "src", include = "poly"}]
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+fastapi = "^0.97.0"
+hypercorn = {extras = ["uvloop"], version = "^0.14.3"}
+python = "^3.10"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.16"}
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+isort = "^5.12.0"
+ruff = "^0.0.272"
+
+[tool.ruff]
+line-length = 88
