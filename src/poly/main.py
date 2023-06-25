@@ -1,10 +1,10 @@
 from fastapi import Depends, FastAPI
-from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+from poly.services.auth import get_current_auth_user
+
 app = FastAPI()
 
 
 @app.get("/")
-async def root(token: str = Depends(oauth2_scheme)):
+async def root(user=Depends(get_current_auth_user)):
     return {"message": "Welcome to Poly"}
