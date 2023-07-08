@@ -25,7 +25,7 @@ repos:
       - id: pytest
         name: pytest
         stages: [commit]
-        entry: poetry run pytest
+        entry: env PYTHONPATH=src poetry run pytest
         language: system
         types: [python]
         pass_filenames: false
