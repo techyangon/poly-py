@@ -13,7 +13,7 @@ from poly.main import app
 
 def override_get_settings() -> Settings:
     return Settings(
-        db_host=os.getenv("DB_HOST", "localhost"),
+        db_host=os.getenv("DB_HOST", "postgres"),
         db_name=os.getenv("DB_NAME", "test_poly"),
         db_username=os.getenv("DB_USERNAME", "postgres"),
         db_password=os.getenv("DB_PASSWORD", "passwd"),
