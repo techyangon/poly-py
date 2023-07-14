@@ -12,4 +12,5 @@ coverage.lcov
 coverage.xml
 
 # Linting
+.mypy_cache
 .ruff_cache
