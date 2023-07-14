@@ -43,7 +43,7 @@ jobs:
         run: |
           poetry run pytest
         env:
-          DB_HOST: postgres
+          DB_HOST: localhost
           DB_NAME: test_poly
           DB_USERNAME: postgres
           DB_PASSWORD: passwd
