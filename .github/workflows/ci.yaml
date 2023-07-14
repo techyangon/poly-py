@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
+      - name: Check services
+        run: |
+          docker ps -a
       - name: Test with pytest
         run: |
           poetry run pytest
