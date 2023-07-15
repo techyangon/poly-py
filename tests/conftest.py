@@ -54,16 +54,16 @@ async def engine(settings):
     yield engine
 
     async with engine.begin() as conn:
-        disable_trigger = "SET session_replication_role = 'replica';"
-        await conn.execute(text(disable_trigger))
+        await conn.execute(text("SET session_replication_role = 'replica';"))
 
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
+            await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
 
 
 @pytest_asyncio.fixture()
 async def client():
-    async with AsyncClient(app=app, base_url="http://test/") as client:
+    async with AsyncClient(app=app, base_url="http://poly.test/") as client:
         app.dependency_overrides[get_settings] = override_get_settings
         yield client
         app.dependency_overrides = {}
