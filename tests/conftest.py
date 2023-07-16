@@ -3,11 +3,11 @@ import os
 
 import pytest_asyncio
 from httpx import AsyncClient
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from poly.config import Settings, get_settings
-from poly.db.models import Base
+from poly.db.models import Base, Resource
 from poly.main import app
 
 
@@ -54,16 +54,36 @@ async def engine(settings):
     yield engine
 
     async with engine.begin() as conn:
-        disable_trigger = "SET session_replication_role = 'replica';"
-        await conn.execute(text(disable_trigger))
+        await conn.execute(text("SET session_replication_role = 'replica';"))
 
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
+            await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
+
+
+@pytest_asyncio.fixture(scope="module")
+async def session(engine):
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+    async with async_session() as session:
+        yield session
+
+
+@pytest_asyncio.fixture(scope="module")
+async def resources(session):
+    async with session.begin():
+        role = Resource(name="role", created_by="admin", updated_by="admin")
+        staff = Resource(name="staff", created_by="admin", updated_by="admin")
+        session.add_all([role, staff])
+
+    query = select(Resource).order_by(Resource.created_at)
+    resources = await session.scalars(query)
+    yield resources.all()
 
 
 @pytest_asyncio.fixture()
 async def client():
-    async with AsyncClient(app=app, base_url="http://test/") as client:
+    async with AsyncClient(app=app, base_url="http://poly.test/") as client:
         app.dependency_overrides[get_settings] = override_get_settings
         yield client
         app.dependency_overrides = {}

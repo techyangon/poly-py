@@ -1,8 +1,10 @@
 from fastapi import Depends, FastAPI
 
+from poly.routers import resources
 from poly.services.auth import get_current_auth_user
 
 app = FastAPI()
+app.include_router(resources.router)
 
 
 @app.get("/")

@@ -40,8 +40,11 @@ jobs:
         run: |
           poetry install
       - name: Test with pytest
-        run: |
+        run: >-
           poetry run pytest
+          --cov=src
+          --cov-report term-missing
+          --cov-report xml:coverage.xml
         env:
           DB_HOST: localhost
           DB_NAME: test_poly
