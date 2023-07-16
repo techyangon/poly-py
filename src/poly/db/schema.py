@@ -1,12 +1,15 @@
 from pydantic import BaseModel
 
 
-class Resource(BaseModel):
-    name: str
+class Base(BaseModel):
     created_at: str
     created_by: str
     updated_at: str
     updated_by: str
+
+
+class Resource(Base):
+    name: str
 
 
 class Resources(BaseModel):
@@ -14,14 +17,10 @@ class Resources(BaseModel):
     total: int
 
 
-class Role(BaseModel):
+class Role(Base):
     name: str
-    created_at: str
-    created_by: str
-    updated_at: str
-    updated_by: str
 
 
 class Roles(BaseModel):
-    resources: list[Resource]
+    roles: list[Role]
     total: int
