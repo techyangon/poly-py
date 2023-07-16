@@ -3,7 +3,7 @@ import os
 
 import pytest_asyncio
 from httpx import AsyncClient
-from sqlalchemy import insert, text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from poly.config import Settings, get_settings
@@ -72,14 +72,13 @@ async def session(engine):
 @pytest_asyncio.fixture(scope="module")
 async def resources(session):
     async with session.begin():
-        resources = await session.scalars(
-            insert(Resource).returning(Resource, sort_by_parameter_order=True),
-            [
-                {"name": "role", "created_by": "admin", "updated_by": "admin"},
-                {"name": "staff", "created_by": "admin", "updated_by": "admin"},
-            ],
-        )
-        yield resources.all()
+        role = Resource(name="role", created_by="admin", updated_by="admin")
+        staff = Resource(name="staff", created_by="admin", updated_by="admin")
+        session.add_all([role, staff])
+
+    query = select(Resource).order_by(Resource.created_at)
+    resources = await session.scalars(query)
+    yield resources.all()
 
 
 @pytest_asyncio.fixture()
