@@ -27,8 +27,8 @@ async def get_session(settings=get_settings()) -> AsyncIterator[AsyncSession]:
         f"{settings.db_name}"
     )
 
-    engine = create_async_engine(uri, echo=True)
+    engine = create_async_engine("".join(uri), echo=True)
     async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-    async with async_session() as session:
+    async with async_session() as session, session.begin():
         yield session

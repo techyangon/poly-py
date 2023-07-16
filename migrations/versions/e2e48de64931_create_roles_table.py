@@ -1,8 +1,8 @@
-"""create resources table
+"""create roles table
 
-Revision ID: 317f18663b6c
-Revises:
-Create Date: 2023-07-15 02:01:16.867824
+Revision ID: e2e48de64931
+Revises: 317f18663b6c
+Create Date: 2023-07-16 14:02:40.562757
 
 """
 import sqlalchemy as sa
@@ -12,8 +12,8 @@ from sqlalchemy.sql import column, table
 from poly.db import UTCNow
 
 # revision identifiers, used by Alembic.
-revision = "317f18663b6c"
-down_revision = None
+revision = "e2e48de64931"
+down_revision = "317f18663b6c"
 branch_labels = None
 depends_on = None
 
@@ -32,7 +32,7 @@ def downgrade() -> None:
 
 def schema_upgrades() -> None:
     op.create_table(
-        "resources",
+        "roles",
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("name", sa.String, unique=True, nullable=False),
         sa.Column("created_at", sa.DateTime, server_default=UTCNow()),
@@ -45,25 +45,28 @@ def schema_upgrades() -> None:
 
 
 def schema_downgrades() -> None:
-    op.drop_table("resources")
+    op.drop_table("roles")
 
 
 def data_upgrades() -> None:
-    resources = table(
-        "resources",
+    roles = table(
+        "roles",
         column("name", sa.String),
         column("created_by", sa.String),
         column("updated_by", sa.String),
     )
     op.bulk_insert(
-        resources,
+        roles,
         [
-            {"name": "role", "created_by": "system", "updated_by": "system"},
+            {"name": "accountant", "created_by": "system", "updated_by": "system"},
+            {"name": "admin", "created_by": "system", "updated_by": "system"},
+            {"name": "lecturer", "created_by": "system", "updated_by": "system"},
+            {"name": "receptionist", "created_by": "system", "updated_by": "system"},
             {"name": "staff", "created_by": "system", "updated_by": "system"},
         ],
     )
 
 
 def data_downgrades() -> None:
-    op.execute("DELETE FROM resources")
-    op.execute("ALTER SEQUENCE resources_id_seq RESTART")
+    op.execute("DELETE FROM roles;")
+    op.execute("ALTER SEQUENCE roles_id_seq RESTART;")

@@ -26,6 +26,17 @@ class Resource(Base):
     updated_by: Mapped[str] = mapped_column(String)
 
 
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    created_at = mapped_column(DateTime, server_default=UTCNow())
+    created_by: Mapped[str] = mapped_column(String)
+    updated_at = mapped_column(DateTime, server_default=UTCNow(), onupdate=UTCNow())
+    updated_by: Mapped[str] = mapped_column(String)
+
+
 class User(Base):
     __tablename__ = "users"
 
