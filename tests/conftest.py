@@ -3,11 +3,11 @@ import os
 
 import pytest_asyncio
 from httpx import AsyncClient
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import insert, text
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from poly.config import Settings, get_settings
-from poly.db.models import Base
+from poly.db.models import Base, Resource
 from poly.main import app
 
 
@@ -59,6 +59,27 @@ async def engine(settings):
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
             await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
+
+
+@pytest_asyncio.fixture(scope="module")
+async def session(engine):
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+    async with async_session() as session:
+        yield session
+
+
+@pytest_asyncio.fixture(scope="module")
+async def resources(session):
+    async with session.begin():
+        resources = await session.scalars(
+            insert(Resource).returning(Resource, sort_by_parameter_order=True),
+            [
+                {"name": "role", "created_by": "admin", "updated_by": "admin"},
+                {"name": "staff", "created_by": "admin", "updated_by": "admin"},
+            ],
+        )
+        yield resources.all()
 
 
 @pytest_asyncio.fixture()
