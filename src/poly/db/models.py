@@ -44,7 +44,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String)
     email: Mapped[str] = mapped_column(String)
     password: Mapped[str] = mapped_column(String)
-    isActive: Mapped[bool] = mapped_column("is_active", Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at = mapped_column(DateTime, server_default=UTCNow())
     created_by: Mapped[str] = mapped_column(String)
     updated_at = mapped_column(DateTime, server_default=UTCNow(), onupdate=UTCNow())
