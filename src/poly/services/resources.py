@@ -11,7 +11,7 @@ from poly.db.schema import Resource as ResourceResponse
 async def get_resources(
     skip: int, per_page: int, session: AsyncSession
 ) -> list[ResourceResponse]:
-    query = select(Resource).offset(skip).limit(per_page)
+    query = select(Resource).order_by(Resource.created_at).offset(skip).limit(per_page)
     result = await session.scalars(query)
     return map_to_response_model(result.all())
 
