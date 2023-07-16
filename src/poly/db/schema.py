@@ -12,3 +12,16 @@ class Resource(BaseModel):
 class Resources(BaseModel):
     resources: list[Resource]
     total: int
+
+
+class Role(BaseModel):
+    name: str
+    created_at: str
+    created_by: str
+    updated_at: str
+    updated_by: str
+
+
+class Roles(BaseModel):
+    resources: list[Resource]
+    total: int
