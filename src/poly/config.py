@@ -44,6 +44,36 @@ class Settings(BaseSettings):
         title="ACCESS_TOKEN_EXPIRY",
         description="Access token expiry in minutes",
     )
+    admin_mail: str = Field(
+        default="",
+        title="ADMIN_MAIL",
+        description="Administrator mail address",
+    )
+    admin_username: str = Field(
+        default="",
+        title="ADMIN_USERNAME",
+        description="Administrator username",
+    )
+    admin_password: str = Field(
+        default="",
+        title="ADMIN_PASSWORD",
+        description="Administrator password",
+    )
+    name_length: int = Field(
+        default=32,
+        title="NAME_LENGTH",
+        description="Name column length",
+    )
+    email_length: int = Field(
+        default=256,
+        title="EMAIL_LENGTH",
+        description="Email column length",
+    )
+    password_hash_length: int = Field(
+        default=72,
+        title="PASSWORD_HASH_LENGTH",
+        description="Password column length",
+    )
 
     class Config:
         env_file = ".env"

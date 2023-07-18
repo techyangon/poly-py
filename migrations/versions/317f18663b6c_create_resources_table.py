@@ -9,6 +9,7 @@ import sqlalchemy as sa
 from alembic import context, op
 from sqlalchemy.sql import column, table
 
+from poly.config import get_settings
 from poly.db import UTCNow
 
 # revision identifiers, used by Alembic.
@@ -16,6 +17,8 @@ revision = "317f18663b6c"
 down_revision = None
 branch_labels = None
 depends_on = None
+
+settings = get_settings()
 
 
 def upgrade() -> None:
@@ -34,7 +37,7 @@ def schema_upgrades() -> None:
     op.create_table(
         "resources",
         sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("name", sa.String, unique=True, nullable=False),
+        sa.Column("name", sa.String(settings.name_length), nullable=False),
         sa.Column("created_at", sa.DateTime, server_default=UTCNow()),
         sa.Column("created_by", sa.String, nullable=False),
         sa.Column(
@@ -65,5 +68,5 @@ def data_upgrades() -> None:
 
 
 def data_downgrades() -> None:
-    op.execute("DELETE FROM resources")
-    op.execute("ALTER SEQUENCE resources_id_seq RESTART")
+    op.execute("DELETE FROM resources;")
+    op.execute("ALTER SEQUENCE resources_id_seq RESTART;")
