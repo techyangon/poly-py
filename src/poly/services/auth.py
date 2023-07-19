@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Sequence
 
 from fastapi import Depends, HTTPException, status
 from passlib.context import CryptContext
@@ -6,18 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from poly.config import get_settings
 from poly.db import get_session
+from poly.db.models import User
 from poly.services import oauth2_scheme
+from poly.services.user import get_user
 
 settings = get_settings()
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def get_hashed_password(password: str) -> str:
-    return password_context.hash(password)
-
-
-def verify_password(password: str, hashed_password: str) -> Literal[True, False]:
-    return password_context.verify(secret=password, hash=hashed_password)
 
 
 def validate_token(token: str = Depends(oauth2_scheme)) -> str:
@@ -26,6 +20,26 @@ def validate_token(token: str = Depends(oauth2_scheme)) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED, detail="No access token"
         )
     return ""
+
+
+async def authenticate(
+    email: str, password: str, session: AsyncSession
+) -> Sequence[User]:
+    user = await get_user(email=email, session=session)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        )
+
+    if isinstance(user, User):
+        if not password_context.verify(password, user.password.strip()):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+            )
+
+    return user
 
 
 async def get_auth_user(

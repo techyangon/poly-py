@@ -1,8 +1,8 @@
-"""create resources table
+"""create users table
 
-Revision ID: 317f18663b6c
-Revises:
-Create Date: 2023-07-15 02:01:16.867824
+Revision ID: 140d13359ed5
+Revises: e2e48de64931
+Create Date: 2023-07-18 11:19:57.207666
 
 """
 import sqlalchemy as sa
@@ -11,10 +11,11 @@ from sqlalchemy.sql import column, table
 
 from poly.config import get_settings
 from poly.db import UTCNow
+from poly.services.auth import password_context
 
 # revision identifiers, used by Alembic.
-revision = "317f18663b6c"
-down_revision = None
+revision = "140d13359ed5"
+down_revision = "e2e48de64931"
 branch_labels = None
 depends_on = None
 
@@ -35,9 +36,14 @@ def downgrade() -> None:
 
 def schema_upgrades() -> None:
     op.create_table(
-        "resources",
+        "users",
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("name", sa.String(settings.name_length), nullable=False),
+        sa.Column(
+            "email", sa.String(settings.email_length), unique=True, nullable=False
+        ),
+        sa.Column("password", sa.String(settings.password_hash_length), nullable=False),
+        sa.Column("is_active", sa.Boolean, default=False),
         sa.Column("created_at", sa.DateTime, server_default=UTCNow()),
         sa.Column("created_by", sa.String, nullable=False),
         sa.Column(
@@ -48,25 +54,34 @@ def schema_upgrades() -> None:
 
 
 def schema_downgrades() -> None:
-    op.drop_table("resources")
+    op.drop_table("users")
 
 
 def data_upgrades() -> None:
-    resources = table(
-        "resources",
+    users = table(
+        "users",
         column("name", sa.String),
+        column("email", sa.String),
+        column("password", sa.String),
+        column("is_active", sa.Boolean),
         column("created_by", sa.String),
         column("updated_by", sa.String),
     )
     op.bulk_insert(
-        resources,
+        users,
         [
-            {"name": "role", "created_by": "system", "updated_by": "system"},
-            {"name": "staff", "created_by": "system", "updated_by": "system"},
+            {
+                "name": settings.admin_username,
+                "email": settings.admin_mail,
+                "password": password_context.hash(settings.admin_password),
+                "is_active": True,
+                "created_by": "system",
+                "updated_by": "system",
+            }
         ],
     )
 
 
 def data_downgrades() -> None:
-    op.execute("DELETE FROM resources;")
-    op.execute("ALTER SEQUENCE resources_id_seq RESTART;")
+    op.execute("DELETE FROM users;")
+    op.execute("ALTER SEQUENCE users_id_seq RESTART;")

@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from poly.config import Settings, get_settings
 from poly.db import get_session
-from poly.db.models import Base, Resource, Role
+from poly.db.models import Base, Resource, Role, User
 from poly.main import app
+from poly.services.auth import password_context
 
 
 def override_get_settings() -> Settings:
@@ -34,7 +35,7 @@ async def override_get_session(settings=get_settings()) -> AsyncIterator[AsyncSe
     engine = create_async_engine("".join(uri), echo=True)
     async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-    async with async_session() as session, session.begin():
+    async with async_session() as session:
         yield session
 
 
@@ -111,6 +112,25 @@ async def roles(session):
         query = select(Role).order_by(Role.created_at)
         result = await session.scalars(query)
         return result.all()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def user(session):
+    async with session.begin():
+        user = User(
+            name="user",
+            email="user@mail.com",
+            password=password_context.hash("passwd"),
+            is_active=True,
+            created_by="system",
+            updated_by="system",
+        )
+        session.add(user)
+
+    async with session.begin():
+        query = select(User).where(User.email == "user@mail.com")
+        result = await session.scalars(query)
+        return result.one()
 
 
 @pytest_asyncio.fixture()

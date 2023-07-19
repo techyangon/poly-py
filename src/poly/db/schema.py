@@ -24,3 +24,9 @@ class Role(Base):
 class Roles(BaseModel):
     roles: list[Role]
     total: int
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    expires_in: str
