@@ -17,10 +17,17 @@ from poly.services.auth import password_context
 
 def override_get_settings() -> Settings:
     return Settings(
+        access_token_audience=os.getenv("ACCESS_TOKEN_AUDIENCE", "http://localhost"),
+        access_token_issuer=os.getenv("ACCESS_TOKEN_ISSUER", "http://localhost"),
+        admin_mail=os.getenv("ADMIN_MAIL", "admin@mail.com"),
+        admin_password=os.getenv("ADMIN_PASSWORD", "passwd"),
+        admin_username=os.getenv("ADMIN_USERNAME", "admin"),
         db_host=os.getenv("DB_HOST", "postgres"),
         db_name=os.getenv("DB_NAME", "test_poly"),
-        db_username=os.getenv("DB_USERNAME", "postgres"),
         db_password=os.getenv("DB_PASSWORD", "passwd"),
+        db_port=os.getenv("DB_PASSWORD", "5432"),
+        db_username=os.getenv("DB_USERNAME", "postgres"),
+        secret_key=os.getenv("SECRET_KEY", "secret"),
     )
 
 

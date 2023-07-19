@@ -20,6 +20,8 @@ asyncpg = "0.28.0"
 fastapi = "0.100.0"
 hypercorn = {extras = ["uvloop"], version = "0.14.4"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+pydantic = "2.0.3"
+pydantic-settings = "2.0.2"
 python = "^3.10"
 python-dotenv = "^1.0.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
