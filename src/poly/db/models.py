@@ -1,4 +1,4 @@
-from sqlalchemy import CHAR, Boolean, DateTime, Integer, MetaData, String
+from sqlalchemy import Boolean, DateTime, Integer, MetaData, String
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from poly.config import get_settings
@@ -45,7 +45,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(settings.name_length))
     email: Mapped[str] = mapped_column(String(settings.email_length))
-    password: Mapped[str] = mapped_column(CHAR(settings.password_hash_length))
+    password: Mapped[str] = mapped_column(String(settings.password_hash_length))
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at = mapped_column(DateTime, server_default=UTCNow())
     created_by: Mapped[str] = mapped_column(String)
