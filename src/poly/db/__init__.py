@@ -1,5 +1,6 @@
 from typing import AsyncIterator
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import expression
@@ -19,7 +20,7 @@ def pg_utcnow(element, compiler, **kw):
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
-async def get_session(settings=get_settings()) -> AsyncIterator[AsyncSession]:
+async def get_session(settings=Depends(get_settings)) -> AsyncIterator[AsyncSession]:
     uri = (
         f"postgresql+asyncpg://"
         f"{settings.db_username}:{settings.db_password}@"

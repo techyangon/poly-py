@@ -3,6 +3,7 @@ import os
 from typing import AsyncIterator
 
 import pytest_asyncio
+from fastapi import Depends
 from httpx import AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -23,7 +24,9 @@ def override_get_settings() -> Settings:
     )
 
 
-async def override_get_session(settings=get_settings()) -> AsyncIterator[AsyncSession]:
+async def override_get_session(
+    settings=Depends(get_settings),
+) -> AsyncIterator[AsyncSession]:
     settings = override_get_settings()
     uri = (
         f"postgresql+asyncpg://"
