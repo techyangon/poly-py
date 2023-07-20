@@ -5,12 +5,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from poly.db import get_session
-from poly.services.auth import authenticate
+from poly.db.schema import Token
+from poly.services.auth import authenticate, generate_access_token
 
 router = APIRouter(tags=["auth"])
 
 
-@router.post("/login")
+@router.post("/login", response_model=Token)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: AsyncSession = Depends(get_session),
@@ -18,4 +19,10 @@ async def login(
     user = await authenticate(
         email=form_data.username, password=form_data.password, session=session
     )
-    return {"user": user}
+    token_details = generate_access_token(user)
+
+    return {
+        "access_token": token_details["token"],
+        "token_type": "Bearer",
+        "expires_in": token_details["expires"],
+    }

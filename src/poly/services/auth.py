@@ -1,6 +1,7 @@
-from typing import Sequence
+from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException, status
+from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +11,6 @@ from poly.db.models import User
 from poly.services import oauth2_scheme
 from poly.services.user import get_user
 
-settings = get_settings()
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -22,9 +22,21 @@ def validate_token(token: str = Depends(oauth2_scheme)) -> str:
     return ""
 
 
-async def authenticate(
-    email: str, password: str, session: AsyncSession
-) -> Sequence[User]:
+def generate_access_token(user: User, settings=get_settings()) -> dict[str, int | str]:
+    expires_delta = datetime.utcnow() + timedelta(minutes=settings.access_token_expiry)
+    claims = {
+        "aud": settings.access_token_audience,
+        "exp": expires_delta,
+        "iss": settings.access_token_issuer,
+        "sub": user.email,
+    }
+    encoded_jwt = jwt.encode(
+        claims=claims, key=settings.secret_key, algorithm=settings.hashing_algorithm
+    )
+    return {"token": encoded_jwt, "expires": settings.access_token_expiry * 60}
+
+
+async def authenticate(email: str, password: str, session: AsyncSession) -> User:
     user = await get_user(email=email, session=session)
     if not user:
         raise HTTPException(
@@ -32,13 +44,11 @@ async def authenticate(
             detail="Incorrect email or password",
         )
 
-    if isinstance(user, User):
-        if not password_context.verify(password, user.password.strip()):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-            )
-
+    if not password_context.verify(password, user.password.strip()):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        )
     return user
 
 

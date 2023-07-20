@@ -12,8 +12,8 @@ class Settings(BaseSettings):
         title="ACCESS_TOKEN_AUDIENCE",
         description="Access token audience",
     )
-    access_token_expiry: str = Field(
-        default="10",
+    access_token_expiry: int = Field(
+        default=10,
         title="ACCESS_TOKEN_EXPIRY",
         description="Access token expiry in minutes",
     )
