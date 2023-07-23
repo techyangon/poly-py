@@ -82,6 +82,11 @@ class Settings(BaseSettings):
         title="PASSWORD_HASH_LENGTH",
         description="Password column length",
     )
+    refresh_token_expiry: int = Field(
+        default=60,
+        title="REFRESH_TOKEN_EXPIRY",
+        description="Refresh token expiry in minutes",
+    )
     secret_key: str = Field(
         ...,
         title="SECRET_KEY",

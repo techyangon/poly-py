@@ -5,7 +5,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from poly.config import get_settings
+from poly.config import Settings
 from poly.db import get_session
 from poly.db.models import User
 from poly.services import oauth2_scheme
@@ -22,8 +22,8 @@ def validate_token(token: str = Depends(oauth2_scheme)) -> str:
     return ""
 
 
-def generate_access_token(user: User, settings=get_settings()) -> dict[str, int | str]:
-    expires_delta = datetime.utcnow() + timedelta(minutes=settings.access_token_expiry)
+def generate_token(user: User, expires_in: int, settings: Settings) -> str:
+    expires_delta = datetime.utcnow() + timedelta(minutes=expires_in)
     claims = {
         "aud": settings.access_token_audience,
         "exp": expires_delta,
@@ -33,7 +33,7 @@ def generate_access_token(user: User, settings=get_settings()) -> dict[str, int 
     encoded_jwt = jwt.encode(
         claims=claims, key=settings.secret_key, algorithm=settings.hashing_algorithm
     )
-    return {"token": encoded_jwt, "expires": settings.access_token_expiry * 60}
+    return encoded_jwt
 
 
 async def authenticate(email: str, password: str, session: AsyncSession) -> User:
