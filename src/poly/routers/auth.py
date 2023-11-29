@@ -32,6 +32,7 @@ async def login(
 
     return {
         "access_token": access_token,
+        "name": user.name,
         "token_type": "Bearer",
         "expires_in": settings.access_token_expiry * 60,
     }
