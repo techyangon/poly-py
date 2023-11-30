@@ -1,9 +1,9 @@
 import asyncio
 import os
-from typing import AsyncIterator
+from typing import Annotated, AsyncIterator, Mapping
 
 import pytest_asyncio
-from fastapi import Depends
+from fastapi import Depends, Header, HTTPException, status
 from httpx import AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -12,7 +12,8 @@ from poly.config import Settings, get_settings
 from poly.db import get_session
 from poly.db.models import Base, Resource, Role, User
 from poly.main import app
-from poly.services.auth import password_context
+from poly.services import oauth2_scheme
+from poly.services.auth import password_context, validate_token
 
 
 def override_get_settings() -> Settings:
@@ -49,6 +50,18 @@ async def override_get_session(
         yield session
 
 
+def override_validate_token(
+    x_username: Annotated[str, Header()],
+    token: Annotated[str, Depends(oauth2_scheme)],
+    settings: Settings = Depends(get_settings),
+) -> Mapping:
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
+        )
+    return {"sub": x_username}
+
+
 @pytest_asyncio.fixture(scope="session", autouse=True)
 def event_loop():
     event_loop_policy = asyncio.get_event_loop_policy()
@@ -59,12 +72,7 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="module")
 def settings():
-    return Settings(
-        db_host=os.getenv("DB_HOST", "postgres"),
-        db_name=os.getenv("DB_NAME", "test_poly"),
-        db_username=os.getenv("DB_USERNAME", "postgres"),
-        db_password=os.getenv("DB_PASSWORD", "passwd"),
-    )
+    return override_get_settings()
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
@@ -148,5 +156,6 @@ async def client():
     async with AsyncClient(app=app, base_url="http://poly.test/") as client:
         app.dependency_overrides[get_settings] = override_get_settings
         app.dependency_overrides[get_session] = override_get_session
+        app.dependency_overrides[validate_token] = override_validate_token
         yield client
         app.dependency_overrides = {}

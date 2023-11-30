@@ -23,7 +23,7 @@ def validate_token(
 ) -> Mapping:
     if not token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="No access token"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
         )
     try:
         return jwt.decode(
