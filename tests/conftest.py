@@ -151,6 +151,25 @@ async def user(session):
         return result.one()
 
 
+@pytest_asyncio.fixture(scope="module")
+async def inactive_user(session):
+    async with session.begin():
+        user = User(
+            name="user.inactive",
+            email="user-inactive@mail.com",
+            password=password_context.hash("passwd"),
+            is_active=False,
+            created_by="system",
+            updated_by="system",
+        )
+        session.add(user)
+
+    async with session.begin():
+        query = select(User).where(User.email == "user-inactive@mail.com")
+        result = await session.scalars(query)
+        return result.one()
+
+
 @pytest_asyncio.fixture()
 async def client():
     async with AsyncClient(app=app, base_url="http://poly.test/") as client:

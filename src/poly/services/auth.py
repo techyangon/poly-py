@@ -11,7 +11,7 @@ from poly.config import Settings, get_settings
 from poly.db import get_session
 from poly.db.models import User
 from poly.services import oauth2_scheme
-from poly.services.user import get_user
+from poly.services.user import get_user_by_email, get_user_by_name
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -63,7 +63,7 @@ def generate_token(user: User, expires_in: int, settings: Settings) -> str:
 
 
 async def authenticate(email: str, password: str, session: AsyncSession) -> User:
-    user = await get_user(email=email, session=session)
+    user = await get_user_by_email(email=email, session=session)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -81,9 +81,20 @@ async def authenticate(email: str, password: str, session: AsyncSession) -> User
 async def get_auth_user(
     token_claims: Mapping = Depends(validate_token),
     session: AsyncSession = Depends(get_session),
-):
-    return {}
+) -> User:
+    user = await get_user_by_name(name=token_claims["sub"], session=session)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+    return user
 
 
-async def get_current_auth_user(user: User = Depends(get_auth_user)):
-    return {}
+async def get_current_auth_user(user: User = Depends(get_auth_user)) -> User:
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user",
+        )
+    return user

@@ -19,7 +19,20 @@ async def test_root_with_empty_token(client):
 
 
 @pytest.mark.asyncio
-async def test_root(client):
+async def test_root_with_inactive_user(client, inactive_user):
+    response = await client.get(
+        "/",
+        headers={
+            "Authorization": "Bearer eyABC.eyDEF.GHI",
+            "X-Username": "user.inactive",
+        },
+    )
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Inactive user"}
+
+
+@pytest.mark.asyncio
+async def test_root(client, user):
     response = await client.get(
         "/", headers={"Authorization": "Bearer eyABC.eyDEF.GHI", "X-Username": "user"}
     )
