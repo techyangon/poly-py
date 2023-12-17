@@ -8,7 +8,7 @@ from httpx import AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from poly.config import Settings, get_settings
+from poly.config import Settings
 from poly.db import get_session
 from poly.db.models import Base, Resource, Role, User
 from poly.main import app
@@ -32,28 +32,25 @@ def override_get_settings() -> Settings:
     )
 
 
-async def override_get_session(
-    settings=Depends(get_settings),
-) -> AsyncIterator[AsyncSession]:
-    settings = override_get_settings()
-    uri = (
-        f"postgresql+asyncpg://"
-        f"{settings.db_username}:{settings.db_password}@"
-        f"{settings.db_host}:{settings.db_port}/"
-        f"{settings.db_name}"
-    )
+test_settings = override_get_settings()
+uri = (
+    f"postgresql+asyncpg://"
+    f"{test_settings.db_username}:{test_settings.db_password}@"
+    f"{test_settings.db_host}:{test_settings.db_port}/"
+    f"{test_settings.db_name}"
+)
+test_engine = create_async_engine("".join(uri), echo=True)
+test_session = async_sessionmaker(test_engine, expire_on_commit=False)
 
-    engine = create_async_engine("".join(uri), echo=True)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-    async with async_session() as session:
+async def override_get_session() -> AsyncIterator[AsyncSession]:
+    async with test_session() as session, session.begin():
         yield session
 
 
 def override_validate_token(
     x_username: Annotated[str, Header()],
     token: Annotated[str, Depends(oauth2_scheme)],
-    settings: Settings = Depends(get_settings),
 ) -> Mapping:
     if not token:
         raise HTTPException(
@@ -173,7 +170,6 @@ async def inactive_user(session):
 @pytest_asyncio.fixture()
 async def client():
     async with AsyncClient(app=app, base_url="http://poly.test/") as client:
-        app.dependency_overrides[get_settings] = override_get_settings
         app.dependency_overrides[get_session] = override_get_session
         app.dependency_overrides[validate_token] = override_validate_token
         yield client
