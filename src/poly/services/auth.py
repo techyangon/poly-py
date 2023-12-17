@@ -7,7 +7,7 @@ from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from poly.config import Settings, get_settings
+from poly.config import settings
 from poly.db import get_session
 from poly.db.models import User
 from poly.services import oauth2_scheme
@@ -19,7 +19,6 @@ password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def validate_token(
     x_username: Annotated[str, Header()],
     token: Annotated[str, Depends(oauth2_scheme)],
-    settings: Settings = Depends(get_settings),
 ) -> Mapping:
     if not token:
         raise HTTPException(
@@ -48,13 +47,13 @@ def validate_token(
         )
 
 
-def generate_token(user: User, expires_in: int, settings: Settings) -> str:
+def generate_token(username: str, expires_in: int) -> str:
     expires_delta = datetime.utcnow() + timedelta(minutes=expires_in)
     claims = {
         "aud": settings.access_token_audience,
         "exp": expires_delta,
         "iss": settings.access_token_issuer,
-        "sub": user.name,
+        "sub": username,
     }
     encoded_jwt = jwt.encode(
         claims=claims, key=settings.secret_key, algorithm=settings.hashing_algorithm
