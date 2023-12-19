@@ -9,7 +9,7 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 
 
 @router.get("/", response_model=Resources)
-async def authenticate(
+async def get_paginated_resources(
     skip: int = 0, limit: int = 10, session: AsyncSession = Depends(get_session)
 ):
     resources = await get_resources(skip=skip, per_page=limit, session=session)

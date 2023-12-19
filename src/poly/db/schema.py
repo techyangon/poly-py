@@ -28,5 +28,6 @@ class Roles(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    name: str
+    expires_in: int
     token_type: str
-    expires_in: str

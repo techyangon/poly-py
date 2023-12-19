@@ -9,7 +9,7 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 
 
 @router.get("/", response_model=Roles)
-async def authenticate(
+async def get_paginated_roles(
     skip: int = 0, limit: int = 10, session: AsyncSession = Depends(get_session)
 ):
     roles = await get_roles(skip=skip, per_page=limit, session=session)
