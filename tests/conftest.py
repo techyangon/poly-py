@@ -26,7 +26,7 @@ def override_get_settings() -> Settings:
         db_host=os.getenv("DB_HOST", "postgres"),
         db_name=os.getenv("DB_NAME", "test_poly"),
         db_password=os.getenv("DB_PASSWORD", "passwd"),
-        db_port=os.getenv("DB_PASSWORD", "5432"),
+        db_port=os.getenv("DB_PORT", "5432"),
         db_username=os.getenv("DB_USERNAME", "postgres"),
         secret_key=os.getenv("SECRET_KEY", "secret"),
     )
