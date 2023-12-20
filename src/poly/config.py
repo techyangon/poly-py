@@ -11,7 +11,7 @@ class Settings(BaseSettings):
         description="Access token audience",
     )
     access_token_expiry: int = Field(
-        default=10,
+        ...,
         title="ACCESS_TOKEN_EXPIRY",
         description="Access token expiry in minutes",
     )
@@ -81,7 +81,7 @@ class Settings(BaseSettings):
         description="Password column length",
     )
     refresh_token_expiry: int = Field(
-        default=60,
+        ...,
         title="REFRESH_TOKEN_EXPIRY",
         description="Refresh token expiry in minutes",
     )

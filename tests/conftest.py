@@ -13,42 +13,29 @@ from poly.db import get_session
 from poly.db.models import Base, Resource, Role, User
 from poly.main import app
 from poly.services import oauth2_scheme
-from poly.services.auth import password_context, validate_token
+from poly.services.auth import password_context, validate_access_token
 
-
-def override_get_settings() -> Settings:
-    return Settings(
-        access_token_audience=os.getenv("ACCESS_TOKEN_AUDIENCE", "http://localhost"),
-        access_token_issuer=os.getenv("ACCESS_TOKEN_ISSUER", "http://localhost"),
-        admin_mail=os.getenv("ADMIN_MAIL", "admin@mail.com"),
-        admin_password=os.getenv("ADMIN_PASSWORD", "passwd"),
-        admin_username=os.getenv("ADMIN_USERNAME", "admin"),
-        db_host=os.getenv("DB_HOST", "postgres"),
-        db_name=os.getenv("DB_NAME", "test_poly"),
-        db_password=os.getenv("DB_PASSWORD", "passwd"),
-        db_port=os.getenv("DB_PORT", "5432"),
-        db_username=os.getenv("DB_USERNAME", "postgres"),
-        secret_key=os.getenv("SECRET_KEY", "secret"),
-    )
-
-
-test_settings = override_get_settings()
-uri = (
-    f"postgresql+asyncpg://"
-    f"{test_settings.db_username}:{test_settings.db_password}@"
-    f"{test_settings.db_host}:{test_settings.db_port}/"
-    f"{test_settings.db_name}"
-)
-test_engine = create_async_engine("".join(uri), echo=True)
-test_session = async_sessionmaker(test_engine, expire_on_commit=False)
+test_settings = Settings(_env_file=".env.development", _env_file_encoding="utf-8") # pyright: ignore
 
 
 async def override_get_session() -> AsyncIterator[AsyncSession]:
-    async with test_session() as session, session.begin():
+    uri = (
+        f"postgresql+asyncpg://"
+        f"{test_settings.db_username}:{test_settings.db_password}@"
+        f"{test_settings.db_host}:{test_settings.db_port}/"
+        f"{test_settings.db_name}"
+    )
+
+    engine = create_async_engine("".join(uri), echo=True)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+    async with async_session() as session, session.begin():
         yield session
 
+    await engine.dispose()
 
-def override_validate_token(
+
+def override_validate_access_token(
     x_username: Annotated[str, Header()],
     token: Annotated[str, Depends(oauth2_scheme)],
 ) -> Mapping:
@@ -69,7 +56,7 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="module")
 def settings():
-    return override_get_settings()
+    return Settings(_env_file=".env.development", _env_file_encoding="utf-8") # pyright: ignore
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
@@ -93,6 +80,8 @@ async def engine(settings):
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
             await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
+
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="module")
@@ -171,6 +160,6 @@ async def inactive_user(session):
 async def client():
     async with AsyncClient(app=app, base_url="http://poly.test/") as client:
         app.dependency_overrides[get_session] = override_get_session
-        app.dependency_overrides[validate_token] = override_validate_token
+        app.dependency_overrides[validate_access_token] = override_validate_access_token
         yield client
         app.dependency_overrides = {}
