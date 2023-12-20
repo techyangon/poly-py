@@ -45,6 +45,8 @@ jobs:
           --cov=src
           --cov-report term-missing
           --cov-report xml:coverage.xml
+        env:
+          POSTGRES_HOST: postgres
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         env:
