@@ -1,5 +1,4 @@
 import asyncio
-import os
 from typing import Annotated, AsyncIterator, Mapping
 
 import pytest_asyncio
@@ -15,7 +14,9 @@ from poly.main import app
 from poly.services import oauth2_scheme
 from poly.services.auth import password_context, validate_access_token
 
-test_settings = Settings(_env_file=".env.development", _env_file_encoding="utf-8") # pyright: ignore
+test_settings = Settings(
+    _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
+)
 
 
 async def override_get_session() -> AsyncIterator[AsyncSession]:
@@ -56,7 +57,9 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="module")
 def settings():
-    return Settings(_env_file=".env.development", _env_file_encoding="utf-8") # pyright: ignore
+    return Settings(
+        _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
+    )
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
