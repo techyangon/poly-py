@@ -22,8 +22,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - uses: actions/checkout@v3
@@ -47,6 +45,7 @@ jobs:
           --cov-report xml:coverage.xml
         env:
           POSTGRES_HOST: postgres
+          POSTGRES_PORT: 5432
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         env:
