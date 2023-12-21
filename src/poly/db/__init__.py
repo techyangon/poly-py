@@ -15,11 +15,11 @@ class UTCNow(expression.FunctionElement):
 
 
 @compiles(UTCNow, "postgresql")
-def pg_utcnow(element, compiler, **kw):
+def pg_utcnow(element, compiler, **kw):  # pragma: no cover
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
-async def get_session() -> AsyncIterator[AsyncSession]:
+async def get_session() -> AsyncIterator[AsyncSession]:  # pragma: no cover
     uri = (
         f"postgresql+asyncpg://"
         f"{settings.db_username}:{settings.db_password}@"
