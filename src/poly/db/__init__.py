@@ -19,17 +19,18 @@ def pg_utcnow(element, compiler, **kw):
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
-uri = (
-    f"postgresql+asyncpg://"
-    f"{settings.db_username}:{settings.db_password}@"
-    f"{settings.db_host}:{settings.db_port}/"
-    f"{settings.db_name}"
-)
-
-engine = create_async_engine("".join(uri), echo=True)
-async_session = async_sessionmaker(engine, expire_on_commit=False)
-
-
 async def get_session() -> AsyncIterator[AsyncSession]:
+    uri = (
+        f"postgresql+asyncpg://"
+        f"{settings.db_username}:{settings.db_password}@"
+        f"{settings.db_host}:{settings.db_port}/"
+        f"{settings.db_name}"
+    )
+
+    engine = create_async_engine("".join(uri), echo=True)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+
     async with async_session() as session, session.begin():
         yield session
+
+    await engine.dispose()
