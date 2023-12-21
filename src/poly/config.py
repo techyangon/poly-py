@@ -94,4 +94,4 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()  # pyright: ignore
+settings = Settings()  # type: ignore
