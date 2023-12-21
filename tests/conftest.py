@@ -2,7 +2,7 @@ import asyncio
 from typing import Annotated, AsyncIterator, Mapping
 
 import pytest_asyncio
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, status
 from httpx import AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -12,7 +12,7 @@ from poly.db import get_session
 from poly.db.models import Base, Resource, Role, User
 from poly.main import app
 from poly.services import oauth2_scheme
-from poly.services.auth import password_context, validate_access_token
+from poly.services.auth import password_context, validate_access_token, validate_cookie
 
 test_settings = Settings(
     _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
@@ -44,6 +44,13 @@ def override_validate_access_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
         )
+    return {"sub": x_username}
+
+
+def override_validate_cookie(
+    x_username: Annotated[str, Header()],
+    poly_refresh_token: Annotated[str | None, Cookie()] = None,
+) -> Mapping:
     return {"sub": x_username}
 
 
@@ -88,42 +95,39 @@ async def engine(settings):
 
 
 @pytest_asyncio.fixture(scope="module")
-async def session(engine):
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-
-    async with async_session() as session:
-        yield session
+async def async_session(engine):
+    return async_sessionmaker(engine, expire_on_commit=False)
 
 
 @pytest_asyncio.fixture(scope="module")
-async def resources(session):
-    async with session.begin():
+async def resources(async_session):
+    async with async_session() as session, session.begin():
         role = Resource(name="role", created_by="system", updated_by="system")
         staff = Resource(name="staff", created_by="system", updated_by="system")
         session.add_all([role, staff])
 
-    async with session.begin():
+    async with async_session() as session, session.begin():
         query = select(Resource).order_by(Resource.created_at)
         result = await session.scalars(query)
         return result.all()
 
 
 @pytest_asyncio.fixture(scope="module")
-async def roles(session):
-    async with session.begin():
+async def roles(async_session):
+    async with async_session() as session, session.begin():
         admin = Role(name="admin", created_by="system", updated_by="system")
         staff = Role(name="staff", created_by="system", updated_by="system")
         session.add_all([admin, staff])
 
-    async with session.begin():
+    async with async_session() as session, session.begin():
         query = select(Role).order_by(Role.created_at)
         result = await session.scalars(query)
         return result.all()
 
 
 @pytest_asyncio.fixture(scope="module")
-async def user(session):
-    async with session.begin():
+async def user(async_session):
+    async with async_session() as session, session.begin():
         user = User(
             name="user",
             email="user@mail.com",
@@ -134,15 +138,15 @@ async def user(session):
         )
         session.add(user)
 
-    async with session.begin():
+    async with async_session() as session, session.begin():
         query = select(User).where(User.email == "user@mail.com")
         result = await session.scalars(query)
         return result.one()
 
 
 @pytest_asyncio.fixture(scope="module")
-async def inactive_user(session):
-    async with session.begin():
+async def inactive_user(async_session):
+    async with async_session() as session, session.begin():
         user = User(
             name="user.inactive",
             email="user-inactive@mail.com",
@@ -153,7 +157,7 @@ async def inactive_user(session):
         )
         session.add(user)
 
-    async with session.begin():
+    async with async_session() as session, session.begin():
         query = select(User).where(User.email == "user-inactive@mail.com")
         result = await session.scalars(query)
         return result.one()
@@ -161,8 +165,9 @@ async def inactive_user(session):
 
 @pytest_asyncio.fixture()
 async def client():
-    async with AsyncClient(app=app, base_url="http://poly.test/") as client:
+    async with AsyncClient(app=app, base_url="http://localhost/") as client:
         app.dependency_overrides[get_session] = override_get_session
         app.dependency_overrides[validate_access_token] = override_validate_access_token
+        app.dependency_overrides[validate_cookie] = override_validate_cookie
         yield client
         app.dependency_overrides = {}

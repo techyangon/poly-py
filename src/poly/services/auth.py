@@ -16,7 +16,7 @@ from poly.services.user import get_user_by_email, get_user_by_name
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def validate_jwt(subject: str, token: str) -> Mapping:
+def validate_jwt(subject: str, token: str) -> Mapping:  # pragma: no cover
     try:
         return jwt.decode(
             token=token,
@@ -54,7 +54,7 @@ def validate_access_token(
 def validate_cookie(
     x_username: Annotated[str, Header()],
     poly_refresh_token: Annotated[str | None, Cookie()] = None,
-) -> Mapping:
+) -> Mapping:  # pragma: no cover
     if not poly_refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty cookie"
