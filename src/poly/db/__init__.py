@@ -1,11 +1,12 @@
 from typing import AsyncIterator
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import expression
 from sqlalchemy.types import DateTime
 
-from poly.config import settings
+from poly.config import Settings, get_settings
 
 
 # https://docs.sqlalchemy.org/en/20/core/compiler.html#utc-timestamp-function
@@ -19,7 +20,9 @@ def pg_utcnow(element, compiler, **kw):  # pragma: no cover
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
-async def get_session() -> AsyncIterator[AsyncSession]:  # pragma: no cover
+async def get_session(
+    settings: Settings = Depends(get_settings),
+) -> AsyncIterator[AsyncSession]:  # pragma: no cover
     uri = (
         f"postgresql+asyncpg://"
         f"{settings.db_username}:{settings.db_password}@"

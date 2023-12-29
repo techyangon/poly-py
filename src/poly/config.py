@@ -1,11 +1,11 @@
+from functools import lru_cache
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=(".env", ".env.development"), env_file_encoding="utf-8"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     access_token_audience: str = Field(
         ...,
@@ -67,11 +67,6 @@ class Settings(BaseSettings):
         title="EMAIL_LENGTH",
         description="Email column length",
     )
-    hashing_algorithm: str = Field(
-        default="HS256",
-        title="HASHING_ALGORITHM",
-        description="Password hashing algorithm",
-    )
     name_length: int = Field(
         default=32,
         title="NAME_LENGTH",
@@ -94,4 +89,6 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()  # type: ignore
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()  # type: ignore
