@@ -2,4 +2,4 @@
 
 poetry run black src tests
 poetry run isort src tests
-poetry run ruff src tests
+poetry run ruff src tests --fix
