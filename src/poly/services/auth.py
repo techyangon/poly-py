@@ -7,7 +7,7 @@ from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from poly.config import settings
+from poly.config import Settings, get_settings
 from poly.db import get_session
 from poly.db.models import User
 from poly.services import oauth2_scheme
@@ -16,15 +16,21 @@ from poly.services.user import get_user_by_email, get_user_by_name
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def validate_jwt(subject: str, token: str) -> Mapping:  # pragma: no cover
+def validate_jwt(
+    audience: str,
+    issuer: str,
+    secret: str,
+    subject: str,
+    token: str,
+) -> Mapping:  # pragma: no cover
     try:
         return jwt.decode(
-            token=token,
-            key=settings.secret_key,
-            algorithms=settings.hashing_algorithm,
-            audience=settings.access_token_audience,
-            issuer=settings.access_token_issuer,
+            algorithms="HS256",
+            audience=audience,
+            issuer=issuer,
+            key=secret,
             subject=subject,
+            token=token,
         )
     except ExpiredSignatureError:
         raise HTTPException(
@@ -40,39 +46,21 @@ def validate_jwt(subject: str, token: str) -> Mapping:  # pragma: no cover
         )
 
 
-def validate_access_token(
-    x_username: Annotated[str, Header()],
-    token: Annotated[str, Depends(oauth2_scheme)],
-) -> Mapping:
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
-        )
-    return validate_jwt(subject=x_username, token=token)
-
-
-def validate_cookie(
-    x_username: Annotated[str, Header()],
-    poly_refresh_token: Annotated[str | None, Cookie()] = None,
-) -> Mapping:  # pragma: no cover
-    if not poly_refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty cookie"
-        )
-    return validate_jwt(subject=x_username, token=poly_refresh_token)
-
-
-def generate_token(username: str, expires_in: int) -> str:
+def generate_token(
+    audience: str,
+    expires_in: int,
+    issuer: str,
+    secret: str,
+    username: str,
+) -> str:
     expires_delta = datetime.utcnow() + timedelta(minutes=expires_in)
     claims = {
-        "aud": settings.access_token_audience,
+        "aud": audience,
         "exp": expires_delta,
-        "iss": settings.access_token_issuer,
+        "iss": issuer,
         "sub": username,
     }
-    encoded_jwt = jwt.encode(
-        claims=claims, key=settings.secret_key, algorithm=settings.hashing_algorithm
-    )
+    encoded_jwt = jwt.encode(claims=claims, key=secret, algorithm="HS256")
     return encoded_jwt
 
 
@@ -107,15 +95,43 @@ async def validate_username(username: str, session: AsyncSession):
     return user
 
 
-async def get_user_from_token(
-    claims: Annotated[Mapping, Depends(validate_access_token)],
+async def get_active_user(
+    x_username: Annotated[str, Header()],
+    token: Annotated[str, Depends(oauth2_scheme)],
     session: Annotated[AsyncSession, Depends(get_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> User:
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
+        )
+
+    claims = validate_jwt(
+        audience=settings.access_token_audience,
+        issuer=settings.access_token_issuer,
+        secret=settings.secret_key,
+        subject=x_username,
+        token=token,
+    )
     return await validate_username(username=claims["sub"], session=session)
 
 
-async def get_user_from_cookie(
-    claims: Annotated[Mapping, Depends(validate_cookie)],
+async def get_active_user_from_cookie(
+    x_username: Annotated[str, Header()],
     session: Annotated[AsyncSession, Depends(get_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    poly_refresh_token: Annotated[str | None, Cookie()] = None,
 ) -> User:
+    if not poly_refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
+        )
+
+    claims = validate_jwt(
+        audience=settings.access_token_audience,
+        issuer=settings.access_token_issuer,
+        secret=settings.secret_key,
+        subject=x_username,
+        token=poly_refresh_token,
+    )
     return await validate_username(username=claims["sub"], session=session)
