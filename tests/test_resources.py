@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_get_terminals(client, resources):
+async def test_get_resources(client, resources):
     response = await client.get(
         "/resources/", headers={"Authorization": "Bearer eyabc.def.ghi"}
     )
