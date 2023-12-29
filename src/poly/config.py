@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,7 +13,7 @@ class Settings(BaseSettings):
         description="Access token audience",
     )
     access_token_expiry: int = Field(
-        default=10,
+        ...,
         title="ACCESS_TOKEN_EXPIRY",
         description="Access token expiry in minutes",
     )
@@ -65,11 +67,6 @@ class Settings(BaseSettings):
         title="EMAIL_LENGTH",
         description="Email column length",
     )
-    hashing_algorithm: str = Field(
-        default="HS256",
-        title="HASHING_ALGORITHM",
-        description="Password hashing algorithm",
-    )
     name_length: int = Field(
         default=32,
         title="NAME_LENGTH",
@@ -81,7 +78,7 @@ class Settings(BaseSettings):
         description="Password column length",
     )
     refresh_token_expiry: int = Field(
-        default=60,
+        ...,
         title="REFRESH_TOKEN_EXPIRY",
         description="Refresh token expiry in minutes",
     )
@@ -92,4 +89,6 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()  # pyright: ignore
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()  # type: ignore

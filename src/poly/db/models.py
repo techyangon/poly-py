@@ -1,9 +1,10 @@
 from sqlalchemy import Boolean, DateTime, Integer, MetaData, String
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
-from poly.config import settings
+from poly.config import get_settings
 from poly.db import UTCNow
 
+settings = get_settings()
 convention = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -16,7 +17,7 @@ metadata = MetaData(naming_convention=convention)
 Base = declarative_base(metadata=metadata)
 
 
-class Resource(Base):
+class Resource(Base):  # type: ignore
     __tablename__ = "resources"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -27,7 +28,7 @@ class Resource(Base):
     updated_by: Mapped[str] = mapped_column(String)
 
 
-class Role(Base):
+class Role(Base):  # type: ignore
     __tablename__ = "roles"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -38,7 +39,7 @@ class Role(Base):
     updated_by: Mapped[str] = mapped_column(String)
 
 
-class User(Base):
+class User(Base):  # type: ignore
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

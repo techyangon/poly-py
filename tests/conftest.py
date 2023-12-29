@@ -1,62 +1,20 @@
 import asyncio
-import os
-from typing import Annotated, AsyncIterator, Mapping
 
 import pytest_asyncio
-from fastapi import Depends, Header, HTTPException, status
 from httpx import AsyncClient
 from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from poly.config import Settings
-from poly.db import get_session
+from poly.config import Settings, get_settings
 from poly.db.models import Base, Resource, Role, User
 from poly.main import app
-from poly.services import oauth2_scheme
-from poly.services.auth import password_context, validate_token
+from poly.services.auth import password_context
 
 
 def override_get_settings() -> Settings:
     return Settings(
-        access_token_audience=os.getenv("ACCESS_TOKEN_AUDIENCE", "http://localhost"),
-        access_token_issuer=os.getenv("ACCESS_TOKEN_ISSUER", "http://localhost"),
-        admin_mail=os.getenv("ADMIN_MAIL", "admin@mail.com"),
-        admin_password=os.getenv("ADMIN_PASSWORD", "passwd"),
-        admin_username=os.getenv("ADMIN_USERNAME", "admin"),
-        db_host=os.getenv("DB_HOST", "postgres"),
-        db_name=os.getenv("DB_NAME", "test_poly"),
-        db_password=os.getenv("DB_PASSWORD", "passwd"),
-        db_port=os.getenv("DB_PORT", "5432"),
-        db_username=os.getenv("DB_USERNAME", "postgres"),
-        secret_key=os.getenv("SECRET_KEY", "secret"),
+        _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
     )
-
-
-test_settings = override_get_settings()
-uri = (
-    f"postgresql+asyncpg://"
-    f"{test_settings.db_username}:{test_settings.db_password}@"
-    f"{test_settings.db_host}:{test_settings.db_port}/"
-    f"{test_settings.db_name}"
-)
-test_engine = create_async_engine("".join(uri), echo=True)
-test_session = async_sessionmaker(test_engine, expire_on_commit=False)
-
-
-async def override_get_session() -> AsyncIterator[AsyncSession]:
-    async with test_session() as session, session.begin():
-        yield session
-
-
-def override_validate_token(
-    x_username: Annotated[str, Header()],
-    token: Annotated[str, Depends(oauth2_scheme)],
-) -> Mapping:
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
-        )
-    return {"sub": x_username}
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
@@ -69,11 +27,13 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="module")
 def settings():
-    return override_get_settings()
+    return Settings(
+        _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
+    )
 
 
-@pytest_asyncio.fixture(scope="module", autouse=True)
-async def engine(settings):
+@pytest_asyncio.fixture(scope="module")
+async def db_session(settings):
     uri = (
         f"postgresql+asyncpg://"
         f"{settings.db_username}:{settings.db_password}@"
@@ -85,7 +45,7 @@ async def engine(settings):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    yield engine
+    yield async_sessionmaker(engine, expire_on_commit=False)
 
     async with engine.begin() as conn:
         await conn.execute(text("SET session_replication_role = 'replica';"))
@@ -94,44 +54,38 @@ async def engine(settings):
             await conn.execute(table.delete())
             await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
 
-
-@pytest_asyncio.fixture(scope="module")
-async def session(engine):
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-
-    async with async_session() as session:
-        yield session
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="module")
-async def resources(session):
-    async with session.begin():
+async def resources(db_session):
+    async with db_session() as session, session.begin():
         role = Resource(name="role", created_by="system", updated_by="system")
         staff = Resource(name="staff", created_by="system", updated_by="system")
         session.add_all([role, staff])
 
-    async with session.begin():
+    async with db_session() as session, session.begin():
         query = select(Resource).order_by(Resource.created_at)
         result = await session.scalars(query)
-        return result.all()
+        yield result.all()
 
 
 @pytest_asyncio.fixture(scope="module")
-async def roles(session):
-    async with session.begin():
+async def roles(db_session):
+    async with db_session() as session, session.begin():
         admin = Role(name="admin", created_by="system", updated_by="system")
         staff = Role(name="staff", created_by="system", updated_by="system")
         session.add_all([admin, staff])
 
-    async with session.begin():
+    async with db_session() as session, session.begin():
         query = select(Role).order_by(Role.created_at)
         result = await session.scalars(query)
-        return result.all()
+        yield result.all()
 
 
 @pytest_asyncio.fixture(scope="module")
-async def user(session):
-    async with session.begin():
+async def user(db_session):
+    async with db_session() as session, session.begin():
         user = User(
             name="user",
             email="user@mail.com",
@@ -142,15 +96,15 @@ async def user(session):
         )
         session.add(user)
 
-    async with session.begin():
+    async with db_session() as session, session.begin():
         query = select(User).where(User.email == "user@mail.com")
         result = await session.scalars(query)
-        return result.one()
+        yield result.one()
 
 
 @pytest_asyncio.fixture(scope="module")
-async def inactive_user(session):
-    async with session.begin():
+async def inactive_user(db_session):
+    async with db_session() as session, session.begin():
         user = User(
             name="user.inactive",
             email="user-inactive@mail.com",
@@ -161,16 +115,15 @@ async def inactive_user(session):
         )
         session.add(user)
 
-    async with session.begin():
+    async with db_session() as session, session.begin():
         query = select(User).where(User.email == "user-inactive@mail.com")
         result = await session.scalars(query)
-        return result.one()
+        yield result.one()
 
 
 @pytest_asyncio.fixture()
 async def client():
-    async with AsyncClient(app=app, base_url="http://poly.test/") as client:
-        app.dependency_overrides[get_session] = override_get_session
-        app.dependency_overrides[validate_token] = override_validate_token
+    async with AsyncClient(app=app, base_url="http://localhost/") as client:
+        app.dependency_overrides[get_settings] = override_get_settings
         yield client
         app.dependency_overrides = {}
