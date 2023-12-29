@@ -45,6 +45,19 @@ jobs:
           --cov=src
           --cov-report term-missing
           --cov-report xml:coverage.xml
+        env:
+          ACCESS_TOKEN_AUDIENCE: http://localhost
+          ACCESS_TOKEN_ISSUER: http://localhost
+          ADMIN_MAIL: admin@mail.com
+          ADMIN_PASSWORD: passwd
+          ADMIN_USERNAME: admin
+          DB_HOST: localhost
+          DB_NAME: test_poly
+          DB_USERNAME: postgres
+          DB_PASSWORD: passwd
+          DB_PORT: 5432
+          PYTHONPATH: src
+          SECRET_KEY: secret
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         env:
