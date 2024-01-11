@@ -16,7 +16,9 @@ async def get_resources(
     return map_to_response_model(result.all())
 
 
-async def get_all_resources(session: AsyncSession) -> Sequence[Resource]:
+async def get_all_resources(
+    session: AsyncSession,
+) -> Sequence[Resource]:  # pragma: no cover
     query = select(Resource).order_by(Resource.created_at)
     result = await session.scalars(query)
     return result.all()

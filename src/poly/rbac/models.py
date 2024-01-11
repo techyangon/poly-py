@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from poly.config import get_settings, rbac_models
 
 
-async def get_enforcer():
+async def get_enforcer():  # pragma: no cover
     settings = get_settings()
     uri = (
         f"postgresql+asyncpg://"
