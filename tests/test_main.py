@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="session")
 async def test_root_without_custom_header(client):
     response = await client.get("/", headers={"Authorization": "Bearer "})
     data = response.json()

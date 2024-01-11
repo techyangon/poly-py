@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy import select, text
@@ -17,22 +15,14 @@ def override_get_settings() -> Settings:
     )
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
-def event_loop():
-    event_loop_policy = asyncio.get_event_loop_policy()
-    loop = event_loop_policy.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="session")
 def settings():
     return Settings(
         _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
     )
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="session")
 async def db_session(settings):
     uri = (
         f"postgresql+asyncpg://"
@@ -57,7 +47,7 @@ async def db_session(settings):
     await engine.dispose()
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="session")
 async def resources(db_session):
     async with db_session() as session, session.begin():
         role = Resource(name="role", created_by="system", updated_by="system")
@@ -70,7 +60,7 @@ async def resources(db_session):
         yield result.all()
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="session")
 async def roles(db_session):
     async with db_session() as session, session.begin():
         admin = Role(name="admin", created_by="system", updated_by="system")
@@ -83,7 +73,7 @@ async def roles(db_session):
         yield result.all()
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="session")
 async def user(db_session):
     async with db_session() as session, session.begin():
         user = User(
@@ -102,7 +92,7 @@ async def user(db_session):
         yield result.one()
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="session")
 async def inactive_user(db_session):
     async with db_session() as session, session.begin():
         user = User(
@@ -121,7 +111,7 @@ async def inactive_user(db_session):
         yield result.one()
 
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture(scope="session")
 async def client():
     async with AsyncClient(app=app, base_url="http://localhost/") as client:
         app.dependency_overrides[get_settings] = override_get_settings

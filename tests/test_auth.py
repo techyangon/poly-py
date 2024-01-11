@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from poly.services.auth import authenticate, validate_username
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="session")
 async def test_authenticate(user, db_session):
     async with db_session() as session, session.begin():
         # incorrect email, correct password
@@ -30,7 +30,16 @@ async def test_authenticate(user, db_session):
         assert result is not None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="session")
+async def test_token_with_empty_cookie(client, user):
+    response = await client.get("/token", headers={"X-Username": user.name})
+    data = response.json()
+
+    assert response.status_code == 401
+    assert data["detail"] == "Empty token"
+
+
+@pytest.mark.asyncio(scope="session")
 async def test_login(client, user):
     response = await client.post(
         "/login",
@@ -40,16 +49,7 @@ async def test_login(client, user):
     assert response.status_code == 200
 
 
-@pytest.mark.asyncio
-async def test_token_with_empty_cookie(client, user):
-    response = await client.get("/token", headers={"X-Username": user.name})
-    data = response.json()
-
-    assert response.status_code == 401
-    assert data["detail"] == "Empty token"
-
-
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="session")
 async def test_validate_username(user, inactive_user, db_session):
     async with db_session() as session, session.begin():
         with pytest.raises(HTTPException) as exc_info:
