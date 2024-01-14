@@ -33,28 +33,30 @@ async def override_validate_access_token(
     return "user"
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 def settings():
     return Settings(
         _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
     )
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def db_session(settings):
-    async with get_engine(settings=settings) as engine, engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    async with get_engine(settings=settings) as engine:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
         yield async_sessionmaker(engine, expire_on_commit=False)
 
-        await conn.execute(text("SET session_replication_role = 'replica';"))
+        async with engine.begin() as conn:
+            await conn.execute(text("SET session_replication_role = 'replica';"))
 
-        for table in reversed(Base.metadata.sorted_tables):
-            await conn.execute(table.delete())
-            await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
+            for table in reversed(Base.metadata.sorted_tables):
+                await conn.execute(table.delete())
+                await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def resources(db_session):
     async with db_session() as session, session.begin():
         role = Resource(name="role", created_by="system", updated_by="system")
@@ -67,7 +69,7 @@ async def resources(db_session):
         yield result.all()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def roles(db_session):
     async with db_session() as session, session.begin():
         admin = Role(name="admin", created_by="system", updated_by="system")
@@ -80,7 +82,7 @@ async def roles(db_session):
         yield result.all()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def user(db_session):
     async with db_session() as session, session.begin():
         user = User(
@@ -99,7 +101,7 @@ async def user(db_session):
         yield result.one()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def inactive_user(db_session):
     async with db_session() as session, session.begin():
         user = User(
@@ -118,7 +120,7 @@ async def inactive_user(db_session):
         yield result.one()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def client():
     async with AsyncClient(app=app, base_url="http://localhost/") as client:
         app.dependency_overrides[get_settings] = override_get_settings
