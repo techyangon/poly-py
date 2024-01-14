@@ -10,7 +10,7 @@ async def test_root_without_custom_header(client):
 
 
 @pytest.mark.asyncio
-async def test_root_with_empty_token(client):
+async def test_root_with_empty_token(client, user):
     response = await client.get(
         "/", headers={"Authorization": "Bearer ", "X-Username": "user"}
     )

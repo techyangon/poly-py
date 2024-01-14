@@ -1,40 +1,20 @@
 import argparse
 import asyncio
-from typing import AsyncIterator
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from poly.config import Settings, get_settings
+from poly.db import get_engine, get_session
 from poly.rbac.models import get_enforcer
 from poly.services.resources import get_all_resources
 
 
-async def get_session(
-    settings: Settings = get_settings(),
-) -> AsyncIterator[AsyncSession]:  # pragma: no cover
-    uri = (
-        f"postgresql+asyncpg://"
-        f"{settings.db_username}:{settings.db_password}@"
-        f"{settings.db_host}:{settings.db_port}/"
-        f"{settings.db_name}"
-    )
-
-    engine = create_async_engine("".join(uri), echo=True)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-
-    async with async_session() as session, session.begin():
-        yield session
-
-    await engine.dispose()
-
-
-async def upgrade(settings: Settings = get_settings()):
-    permissions = ["delete", "post", "put", "read"]
+async def upgrade(settings: Settings):
+    permissions = ["DELETE", "GET", "POST", "PUT"]
     resources = []
 
-    async for session in get_session():
-        resources = await get_all_resources(session=session)
+    async_session = await get_session(settings=settings)
+    resources = await get_all_resources(async_session=async_session)
 
     if not resources:
         raise SystemExit()
@@ -45,23 +25,14 @@ async def upgrade(settings: Settings = get_settings()):
         for permission in permissions
     ]
 
-    enforcer = await get_enforcer()
+    enforcer = await get_enforcer(settings=settings)
 
     await enforcer.add_named_policies("p", policies)
     await enforcer.add_role_for_user(settings.admin_username, "role_admin")
 
 
-async def downgrade(settings: Settings = get_settings()):
-    uri = (
-        f"postgresql+asyncpg://"
-        f"{settings.db_username}:{settings.db_password}@"
-        f"{settings.db_host}:{settings.db_port}/"
-        f"{settings.db_name}"
-    )
-
-    engine = create_async_engine("".join(uri), echo=True)
-
-    async with engine.begin() as conn:
+async def downgrade(settings: Settings):
+    async with get_engine(settings=settings) as engine, engine.begin() as conn:
         await conn.execute(text("DROP TABLE casbin_rule;"))
 
 
@@ -70,7 +41,9 @@ if __name__ == "__main__":
     parser.add_argument("--type")
     args = parser.parse_args()
 
+    settings = get_settings()
+
     if args.type == "upgrade":
-        asyncio.run(upgrade())
+        asyncio.run(upgrade(settings=settings))
     elif args.type == "downgrade":
-        asyncio.run(downgrade())
+        asyncio.run(downgrade(settings=settings))

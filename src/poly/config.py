@@ -94,19 +94,21 @@ def get_settings() -> Settings:
     return Settings()  # type: ignore
 
 
-rbac_models = """
-    [request_definition]
-    r = sub, obj, act
+@lru_cache
+def get_rbac_models() -> str:
+    return """
+        [request_definition]
+        r = sub, obj, act
 
-    [policy_definition]
-    p = sub, obj, act
+        [policy_definition]
+        p = sub, obj, act
 
-    [role_definition]
-    g = _, _
+        [role_definition]
+        g = _, _
 
-    [policy_effect]
-    e = some(where (p.eft == allow))
+        [policy_effect]
+        e = some(where (p.eft == allow))
 
-    [matchers]
-    m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
+        [matchers]
+        m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
     """
