@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.db import get_session
 from poly.db.schema import Roles
-from poly.services.auth import check_permission
+from poly.services.permissions import check_permission
 from poly.services.roles import get_roles, get_roles_count
 
 router = APIRouter(prefix="/roles", tags=["roles"])

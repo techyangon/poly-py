@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+Permission = dict[str, str | list[str]]
+
 
 class Base(BaseModel):
     created_at: str
@@ -28,6 +30,8 @@ class Roles(BaseModel):
 
 class Token(BaseModel):
     access_token: str
-    name: str
     expires_in: int
+    name: str
+    permissions: list[Permission]
+    role: str
     token_type: str

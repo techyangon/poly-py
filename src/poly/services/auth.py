@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
-from typing import Annotated, Literal, Mapping
+from typing import Annotated, Mapping
 
-from casbin import AsyncEnforcer
-from fastapi import Cookie, Depends, Header, HTTPException, Request, status
+from fastapi import Cookie, Depends, Header, HTTPException, status
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from passlib.context import CryptContext
@@ -11,7 +10,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from poly.config import Settings, get_settings
 from poly.db import get_session
 from poly.db.models import User
-from poly.rbac.models import get_enforcer
 from poly.services import oauth2_scheme
 from poly.services.user import get_user_by_email, get_user_by_name
 
@@ -144,11 +142,3 @@ async def validate_access_token(
     )
 
     return claims["sub"]
-
-
-async def check_permission(
-    request: Request,
-    username: Annotated[str, Depends(validate_access_token)],
-    enforcer: Annotated[AsyncEnforcer, Depends(get_enforcer)],
-) -> Literal[True, False]:  # pragma: no cover
-    return enforcer.enforce(username, request.url.path.strip("/"), request.method)
