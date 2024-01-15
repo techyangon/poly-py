@@ -5,7 +5,7 @@ from poly.services.auth import authenticate, get_active_user
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_authenticate(user, db_session):
+async def test_authenticate(db_session, user):
     # incorrect email, correct password
     with pytest.raises(HTTPException) as exc_info:
         await authenticate(
@@ -28,6 +28,7 @@ async def test_authenticate(user, db_session):
 @pytest.mark.asyncio(scope="session")
 async def test_token_with_empty_cookie(client, user):
     response = await client.get("/token", headers={"X-Username": user.name})
+
     data = response.json()
 
     assert response.status_code == 401
@@ -35,17 +36,22 @@ async def test_token_with_empty_cookie(client, user):
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_login(client, user):
+async def test_login(client, permissions, user):
     response = await client.post(
         "/login",
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         data={"username": user.email, "password": "passwd"},
     )
+
+    data = response.json()
+
     assert response.status_code == 200
+    assert data["role"] == "admin"
+    assert data["permissions"][0] == {"resource": "roles", "permissions": ["GET"]}
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_get_active_user(user, inactive_user, db_session):
+async def test_get_active_user(db_session, inactive_user, user):
     with pytest.raises(HTTPException) as exc_info:
         await get_active_user("non_user", db_session)
     assert exc_info.value.status_code == 401

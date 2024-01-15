@@ -2,9 +2,10 @@ import pytest
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_get_resources(client, resources):
+async def test_get_resources(client, resources, user):
     response = await client.get(
-        "/resources/", headers={"Authorization": "Bearer eyabc.def.ghi"}
+        "/resources/",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
     )
     assert response.status_code == 200
     data = response.json()

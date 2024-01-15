@@ -10,6 +10,7 @@ from poly.config import Settings, get_settings
 from poly.db import get_engine
 from poly.db.models import Base, Resource, Role, User
 from poly.main import app
+from poly.rbac.models import get_enforcer
 from poly.services import oauth2_scheme
 from poly.services.auth import get_active_user, password_context, validate_access_token
 
@@ -118,6 +119,23 @@ async def inactive_user(db_session):
         query = select(User).where(User.email == "user-inactive@mail.com")
         result = await session.scalars(query)
         yield result.one()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def permissions(settings):
+    permissions = ["GET"]
+    resources = ["roles"]
+
+    policies = [
+        ["role_admin", resource, permission]
+        for resource in resources
+        for permission in permissions
+    ]
+
+    enforcer = await get_enforcer(settings=settings)
+
+    await enforcer.add_named_policies("p", policies)
+    await enforcer.add_role_for_user(settings.admin_username, "role_admin")
 
 
 @pytest_asyncio.fixture(scope="session")
