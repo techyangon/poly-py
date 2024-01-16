@@ -21,7 +21,7 @@ class State(Base):
     __tablename__ = "states"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(settings.name_length))
+    name: Mapped[str] = mapped_column(String(settings.name_length), unique=True)
     cities: Mapped[list["City"]] = relationship(
         back_populates="state", cascade="all, delete", passive_deletes=True
     )
@@ -35,7 +35,7 @@ class City(Base):
     __tablename__ = "cities"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(settings.name_length))
+    name: Mapped[str] = mapped_column(String(settings.name_length), unique=True)
     state_id: Mapped[int] = mapped_column(ForeignKey("states.id"))
     state: Mapped["State"] = relationship(back_populates="cities")
     townships: Mapped[list["Township"]] = relationship(
@@ -55,7 +55,7 @@ class Township(Base):
     city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"))
     city: Mapped["City"] = relationship(back_populates="townships")
     branches: Mapped[list["Branch"]] = relationship(
-        back_populates="branch", cascade="all, delete", passive_deletes=True
+        back_populates="township", cascade="all, delete", passive_deletes=True
     )
     created_at = mapped_column(DateTime, server_default=UTCNow())
     created_by: Mapped[str] = mapped_column(String, default="system")
@@ -67,7 +67,7 @@ class Resource(Base):  # type: ignore
     __tablename__ = "resources"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(settings.name_length))
+    name: Mapped[str] = mapped_column(String(settings.name_length), unique=True)
     created_at = mapped_column(DateTime, server_default=UTCNow())
     created_by: Mapped[str] = mapped_column(String(settings.name_length))
     updated_at = mapped_column(DateTime, server_default=UTCNow(), onupdate=UTCNow())
@@ -78,7 +78,7 @@ class Role(Base):  # type: ignore
     __tablename__ = "roles"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(settings.name_length))
+    name: Mapped[str] = mapped_column(String(settings.name_length), unique=True)
     created_at = mapped_column(DateTime, server_default=UTCNow())
     created_by: Mapped[str] = mapped_column(String(settings.name_length))
     updated_at = mapped_column(DateTime, server_default=UTCNow(), onupdate=UTCNow())
@@ -90,7 +90,7 @@ class User(Base):  # type: ignore
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(settings.name_length))
-    email: Mapped[str] = mapped_column(String(settings.email_length))
+    email: Mapped[str] = mapped_column(String(settings.email_length), unique=True)
     password: Mapped[str] = mapped_column(String(settings.password_hash_length))
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at = mapped_column(DateTime, server_default=UTCNow())
@@ -103,7 +103,7 @@ class Branch(Base):
     __tablename__ = "branches"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(settings.name_length))
+    name: Mapped[str] = mapped_column(String(settings.name_length), unique=True)
     address: Mapped[str] = mapped_column(String(settings.address_length))
     township_id: Mapped[int] = mapped_column(ForeignKey("townships.id"))
     township: Mapped["Township"] = relationship(back_populates="branches")

@@ -36,7 +36,7 @@ def schema_upgrades() -> None:
     op.create_table(
         "states",
         sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("name", sa.String(settings.name_length), nullable=False),
+        sa.Column("name", sa.String(settings.name_length), nullable=False, unique=True),
         sa.Column("created_at", sa.DateTime, server_default=UTCNow()),
         sa.Column("created_by", sa.String, nullable=False, default="system"),
         sa.Column(

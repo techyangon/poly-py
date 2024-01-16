@@ -36,7 +36,7 @@ def schema_upgrades() -> None:
     op.create_table(
         "branches",
         sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("name", sa.String(settings.name_length), nullable=False),
+        sa.Column("name", sa.String(settings.name_length), nullable=False, unique=True),
         sa.Column("address", sa.String(settings.address_length), nullable=False),
         sa.Column("township_id", sa.Integer, nullable=False),
         sa.Column("created_at", sa.DateTime, server_default=UTCNow()),
