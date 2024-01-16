@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-poetry run black src rbac tests
-poetry run isort src rbac tests
-poetry run ruff src rbac tests --fix
+poetry run black src rbac scripts tests
+poetry run isort src rbac scripts tests
+poetry run ruff src rbac scripts tests --fix
