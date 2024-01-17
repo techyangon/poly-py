@@ -11,30 +11,30 @@ from poly.db.schema import Resource as ResourceResponse
 async def get_resources(
     skip: int, per_page: int, async_session: async_sessionmaker
 ) -> list[ResourceResponse]:
-    query = select(Resource).order_by(Resource.created_at).offset(skip).limit(per_page)
     async with async_session() as session, session.begin():
-        result = await session.scalars(query)
+        result = await session.scalars(
+            select(Resource).order_by(Resource.created_at).offset(skip).limit(per_page)
+        )
         return map_to_response_model(result.all())
 
 
 async def get_all_resources(
     async_session: async_sessionmaker,
 ) -> Sequence[Resource]:  # pragma: no cover
-    query = select(Resource).order_by(Resource.created_at)
     async with async_session() as session, session.begin():
-        result = await session.scalars(query)
+        result = await session.scalars(select(Resource).order_by(Resource.created_at))
         return result.all()
 
 
 async def get_resources_count(async_session: async_sessionmaker) -> int:
-    query = select(func.count()).select_from(Resource)
     async with async_session() as session, session.begin():
-        result = await session.execute(query)
+        result = await session.execute(select(func.count()).select_from(Resource))
         return result.scalar_one()
 
 
 def map_to_response_model(result: Sequence[Resource]) -> list[ResourceResponse]:
     resources = []
+
     for resource in result:
         resources.append(
             ResourceResponse(

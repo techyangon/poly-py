@@ -68,9 +68,7 @@ async def resources(db_session):
         )
 
     async with db_session() as session, session.begin():
-        result = await session.scalars(
-            select(Resource).order_by(Resource.created_at)
-        )
+        result = await session.scalars(select(Resource).order_by(Resource.created_at))
         yield result.all()
 
 
@@ -143,9 +141,7 @@ async def state(db_session):
         )
 
     async with db_session() as session, session.begin():
-        result = await session.scalars(
-            select(State).where(State.name == "state1")
-        )
+        result = await session.scalars(select(State).where(State.name == "state1"))
         yield result.one()
 
 

@@ -15,8 +15,7 @@ async def get_state_by_name(
     name: str, async_session: async_sessionmaker
 ) -> Optional[State]:
     async with async_session() as session, session.begin():
-        query = select(State).where(State.name == name)
-        result = await session.scalars(query)
+        result = await session.scalars(select(State).where(State.name == name))
         return result.one_or_none()
 
 
@@ -29,8 +28,7 @@ async def get_city_by_name(
     name: str, async_session: async_sessionmaker
 ) -> Optional[City]:
     async with async_session() as session, session.begin():
-        query = select(City).where(City.name == name)
-        result = await session.scalars(query)
+        result = await session.scalars(select(City).where(City.name == name))
         return result.one_or_none()
 
 
