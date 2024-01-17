@@ -23,8 +23,21 @@ class Role(Base):
     name: str
 
 
+class Branch(Base):
+    address: str
+    city: str
+    name: str
+    state: str
+    township: str
+
+
 class Roles(BaseModel):
     roles: list[Role]
+    total: int
+
+
+class Branches(BaseModel):
+    branches: list[Branch]
     total: int
 
 

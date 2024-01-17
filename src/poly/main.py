@@ -1,10 +1,11 @@
 from fastapi import Depends, FastAPI
 
-from poly.routers import auth, resources, roles
+from poly.routers import auth, branches, resources, roles
 from poly.services.auth import validate_access_token
 
 app = FastAPI()
 app.include_router(auth.router)
+app.include_router(branches.router)
 app.include_router(resources.router)
 app.include_router(roles.router)
 
