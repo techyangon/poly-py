@@ -49,6 +49,7 @@ jobs:
           ACCESS_TOKEN_AUDIENCE: http://localhost
           ACCESS_TOKEN_EXPIRY: 10
           ACCESS_TOKEN_ISSUER: http://localhost
+          ADDRESS_LENGTH: 255
           ADMIN_MAIL: admin@mail.com
           ADMIN_PASSWORD: passwd
           ADMIN_USERNAME: admin
