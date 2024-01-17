@@ -88,12 +88,12 @@ async def roles(db_session):
 
 
 @pytest_asyncio.fixture(scope="session")
-async def user(db_session):
+async def user(db_session, settings):
     async with db_session() as session, session.begin():
         session.add(
             User(
-                name="user",
-                email="user@mail.com",
+                name=settings.admin_username,
+                email=settings.admin_mail,
                 password=password_context.hash("passwd"),
                 is_active=True,
                 created_by="system",
@@ -103,7 +103,7 @@ async def user(db_session):
 
     async with db_session() as session, session.begin():
         result = await session.scalars(
-            select(User).where(User.email == "user@mail.com")
+            select(User).where(User.email == settings.admin_mail)
         )
         yield result.one()
 
