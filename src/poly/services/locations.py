@@ -1,7 +1,25 @@
+from typing import Sequence
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.orm import joinedload
 
 from poly.db.models import City, State, Township
+from poly.db.schema import (
+    City as CityResponse,
+    State as StateResponse,
+    Township as TownshipResponse,
+)
+
+
+async def get_all_locations(async_session: async_sessionmaker) -> list[StateResponse]:
+    async with async_session() as session, session.begin():
+        result = await session.scalars(
+            select(State)
+            .options(joinedload(State.cities).subqueryload(City.townships))
+            .order_by(State.created_at)
+        )
+        return map_to_response_model(result=result.unique().all())
 
 
 async def save_city(
@@ -36,3 +54,20 @@ async def save_townships(
         pending_tsps = [Township(name=tsp, city_id=saved_city.id) for tsp in townships]
 
         session.add_all(pending_tsps)
+
+
+def map_to_response_model(result: Sequence[State]) -> list[StateResponse]:
+    states = []
+    for state in result:
+        cities = []
+        for city in state.cities:
+            townships = [
+                TownshipResponse(name=tsp.name, value=tsp.id) for tsp in city.townships
+            ]
+            cities.append(
+                CityResponse(name=city.name, value=city.id, townships=townships)
+            )
+
+        states.append(StateResponse(name=state.name, value=state.id, cities=cities))
+
+    return states
