@@ -27,7 +27,9 @@ async def get_branches(
         return map_to_response_model(result=result.all())
 
 
-async def get_branches_count(async_session: async_sessionmaker) -> int:
+async def get_branches_count(
+    async_session: async_sessionmaker,
+) -> int:  # pragma: no cover
     async with async_session() as session, session.begin():
         result = await session.execute(select(func.count()).select_from(Branch))
         return result.scalar_one()

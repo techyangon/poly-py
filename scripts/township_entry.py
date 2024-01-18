@@ -3,13 +3,7 @@ import csv
 
 from poly.config import Settings, get_settings
 from poly.db import get_session
-from poly.services.locations import (
-    get_city_by_name,
-    get_state_by_name,
-    save_city,
-    save_state,
-    save_townships,
-)
+from poly.services.locations import save_city, save_state_and_city, save_townships
 
 
 async def seed_data(settings: Settings):
@@ -21,87 +15,44 @@ async def seed_data(settings: Settings):
         state, city, townships = "", "", []
         for row in townships_csv:
             if state == "":
-                await save_state(name=row[0], async_session=async_session)
-
-                saved_state = await get_state_by_name(
-                    name=row[0], async_session=async_session
+                state, city = row[0], row[1]
+                await save_state_and_city(
+                    city=city, state=state, async_session=async_session
                 )
-                if saved_state:
-                    await save_city(
-                        name=row[1],
-                        state_id=saved_state.id,
-                        async_session=async_session,
-                    )
 
-                state = row[0]
-                city = row[1]
                 townships.append(row[2])
             elif state == row[0]:
                 if city != row[1]:
-                    saved_city = await get_city_by_name(
-                        name=city, async_session=async_session
+                    # {city} & {townships} holds data from previous iteration
+                    await save_townships(
+                        city=city, townships=townships, async_session=async_session
                     )
 
-                    if saved_city:
-                        await save_townships(
-                            townships=townships,
-                            city_id=saved_city.id,
-                            async_session=async_session,
-                        )
-
-                    saved_state = await get_state_by_name(
-                        name=state, async_session=async_session
-                    )
-                    if saved_state:
-                        await save_city(
-                            name=row[1],
-                            state_id=saved_state.id,
-                            async_session=async_session,
-                        )
-
+                    # Assign and save current iteration data
                     city = row[1]
-                    townships = []
+                    await save_city(name=city, state=state, async_session=async_session)
 
+                    townships = []
                 townships.append(row[2])
             else:
-                # Save previous iteration data
-                saved_city = await get_city_by_name(
-                    name=city, async_session=async_session
+                # {city} & {townships} holds data from previous iteration
+                await save_townships(
+                    city=city, townships=townships, async_session=async_session
                 )
-
-                if saved_city:
-                    await save_townships(
-                        townships=townships,
-                        city_id=saved_city.id,
-                        async_session=async_session,
-                    )
 
                 # Save current iteration data
-                await save_state(name=row[0], async_session=async_session)
-
-                saved_state = await get_state_by_name(
-                    name=row[0], async_session=async_session
+                state, city = row[0], row[1]
+                await save_state_and_city(
+                    city=city, state=state, async_session=async_session
                 )
-                if saved_state:
-                    await save_city(
-                        name=row[1],
-                        state_id=saved_state.id,
-                        async_session=async_session,
-                    )
 
-                state = row[0]
-                city = row[1]
                 townships = []
                 townships.append(row[2])
 
-        saved_city = await get_city_by_name(name=city, async_session=async_session)
-
-        if saved_city:
-            await save_townships(
-                townships=townships,
-                city_id=saved_city.id,
-                async_session=async_session,
-            )
+        # Above iteration will skip last group of townships
+        await save_townships(
+            city=city, townships=townships, async_session=async_session
+        )
 
 
 if __name__ == "__main__":
