@@ -11,4 +11,3 @@ async def test_get_resources(client, resources, user):
     data = response.json()
     assert data["resources"][0]["name"] == resources[0].name
     assert data["resources"][1]["name"] == resources[1].name
-    assert data["total"] == 2

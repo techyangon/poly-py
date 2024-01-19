@@ -10,13 +10,12 @@ class Base(BaseModel):
     updated_by: str
 
 
-class Resource(Base):
+class Resource(BaseModel):
     name: str
 
 
 class Resources(BaseModel):
     resources: list[Resource]
-    total: int
 
 
 class Role(Base):
