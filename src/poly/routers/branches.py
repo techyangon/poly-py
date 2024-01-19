@@ -14,15 +14,15 @@ router = APIRouter(prefix="/branches", tags=["branches"])
 @router.get("/", response_model=Branches)
 async def get_paginated_branches(
     session: Annotated[async_sessionmaker, Depends(get_session)],
-    is_allowed: Annotated[bool, Depends(check_permission)],
+    _: Annotated[bool, Depends(check_permission)],
     skip: int = 0,
     limit: int = 10,
 ):
     total = await get_branches_count(async_session=session)
-
     if not total:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="There are no branches."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="There are no existing branches.",
         )
 
     branches = await get_branches(skip=skip, per_page=limit, async_session=session)

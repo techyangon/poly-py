@@ -43,7 +43,7 @@ async def login(
         username=user.name,
     )
 
-    # Enforcer returns a list in the form of [[$username, $rolename]]
+    # Enforcer returns a list in the form of [[{username}, {rolename}]]
     role = enforcer.get_filtered_named_grouping_policy("g", 0, user.name)[0][1]
     permissions = get_permissions_by_role(enforcer=enforcer, role=role)
 
@@ -54,7 +54,7 @@ async def login(
         "expires_in": settings.access_token_expiry * 60,
         "name": user.name,
         "permissions": permissions,
-        "role": role.split("_")[1],  # roles are stored as role_$rolename
+        "role": role.split("_")[1],  # roles are stored as role_{rolename}
         "token_type": "Bearer",
     }
 
