@@ -31,7 +31,7 @@ async def override_validate_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Empty token",
         )
-    return "user"
+    return user.name
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -125,6 +125,27 @@ async def inactive_user(db_session):
     async with db_session() as session, session.begin():
         result = await session.scalars(
             select(User).where(User.email == "user-inactive@mail.com")
+        )
+        yield result.one()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def unauthorized_user(db_session):
+    async with db_session() as session, session.begin():
+        session.add(
+            User(
+                name="user.unauthorized",
+                email="user-unauthorized@mail.com",
+                password=password_context.hash("passwd"),
+                is_active=True,
+                created_by="system",
+                updated_by="system",
+            )
+        )
+
+    async with db_session() as session, session.begin():
+        result = await session.scalars(
+            select(User).where(User.email == "user-unauthorized@mail.com")
         )
         yield result.one()
 

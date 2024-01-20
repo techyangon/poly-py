@@ -15,6 +15,22 @@ async def test_empty_branches(client, user):
 
 
 @pytest.mark.asyncio(scope="session")
+async def test_get_roles_with_unauthorized_user(client, roles, unauthorized_user):
+    response = await client.get(
+        "/roles/",
+        headers={
+            "Authorization": "Bearer eyabc.def.ghi",
+            "X-Username": unauthorized_user.name,
+        },
+    )
+
+    data = response.json()
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert data["detail"] == "User is not authorized to access this resource."
+
+
+@pytest.mark.asyncio(scope="session")
 async def test_get_roles(client, roles, user):
     response = await client.get(
         "/roles/",

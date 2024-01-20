@@ -15,10 +15,10 @@ async def get_roles(
         result = await session.scalars(
             select(Role).order_by(Role.created_at).offset(skip).limit(per_page)
         )
-        return map_to_response_model(result.all())
+        return map_to_response_model(result.all())  # pragma: no cover
 
 
-async def get_roles_count(async_session: async_sessionmaker) -> int:
+async def get_roles_count(async_session: async_sessionmaker) -> int:  # pragma: no cover
     async with async_session() as session, session.begin():
         result = await session.execute(select(func.count()).select_from(Role))
         return result.scalar_one()

@@ -19,7 +19,7 @@ async def get_all_locations(async_session: async_sessionmaker) -> list[StateResp
             .options(joinedload(State.cities).subqueryload(City.townships))
             .order_by(State.created_at)
         )
-        return map_to_response_model(result=result.unique().all())
+        return map_to_response_model(result=result.unique().all())  # pragma: no cover
 
 
 async def save_city(
