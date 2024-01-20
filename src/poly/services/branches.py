@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Sequence
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -24,22 +23,7 @@ async def get_branches(
             .offset(skip)
             .limit(per_page)
         )
-        return map_to_response_model(result=result.all())
-
-
-async def get_branches_count(
-    async_session: async_sessionmaker,
-) -> int:  # pragma: no cover
-    async with async_session() as session, session.begin():
-        result = await session.execute(select(func.count()).select_from(Branch))
-        return result.scalar_one()
-
-
-def map_to_response_model(result: Sequence[Branch]) -> list[BranchResponse]:
-    branches = []
-
-    for branch in result:
-        branches.append(
+        return [
             BranchResponse(
                 name=branch.name,
                 address=branch.address,
@@ -51,6 +35,13 @@ def map_to_response_model(result: Sequence[Branch]) -> list[BranchResponse]:
                 updated_at=datetime.isoformat(branch.updated_at) + "Z",
                 updated_by=branch.updated_by,
             )
-        )
+            for branch in result.all()
+        ]
 
-    return branches
+
+async def get_branches_count(
+    async_session: async_sessionmaker,
+) -> int:  # pragma: no cover
+    async with async_session() as session, session.begin():
+        result = await session.execute(select(func.count()).select_from(Branch))
+        return result.scalar_one()
