@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from asyncpg.exceptions import UniqueViolationError
+from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -69,7 +69,11 @@ async def save_branch(
                 )
             )
             await session.commit()
-        except IntegrityError as error:
+        except IntegrityError as error:  # pragma: no cover
             await session.rollback()
-            if error.orig and error.orig.__cause__.__class__ == UniqueViolationError:
-                raise ValueError
+            if error.orig:
+                if error.orig.__cause__.__class__ == UniqueViolationError:
+                    raise ValueError(f"Branch with name {name} already exists.")
+
+                if error.orig.__cause__.__class__ == ForeignKeyViolationError:
+                    raise ValueError("Township does not exist.")

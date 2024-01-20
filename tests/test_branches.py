@@ -63,6 +63,19 @@ async def test_create_new_branch_with_empty_values(client, user):
 
 
 @pytest.mark.asyncio(scope="session")
+async def test_create_new_branch_with_missing_township(client, user):
+    response = await client.post(
+        "/branches/",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+        json={"name": "branch2", "address": "address2", "township_id": 2},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert data["detail"] == "Township does not exist."
+
+
+@pytest.mark.asyncio(scope="session")
 async def test_create_new_branch(branches, client, user):
     response = await client.post(
         "/branches/",

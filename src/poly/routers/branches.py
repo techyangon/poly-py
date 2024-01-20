@@ -45,10 +45,10 @@ async def create_new_branch(
             updated_by=username,
             async_session=session,
         )
-    except ValueError:
+    except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Branch with name {branch.name} already exists.",
+            detail=str(error),
         )
 
     return {"message": f"{branch.name} branch is successfully created."}
