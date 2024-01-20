@@ -3,6 +3,18 @@ from fastapi import status
 
 
 @pytest.mark.asyncio(scope="session")
+async def test_empty_branches(client, user):
+    response = await client.get(
+        "/branches/",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert data["detail"] == "There are no existing branches."
+
+
+@pytest.mark.asyncio(scope="session")
 async def test_get_paginated_branches(branches, city, client, state, township, user):
     response = await client.get(
         "/branches/",

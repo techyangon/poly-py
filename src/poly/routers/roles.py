@@ -22,7 +22,7 @@ async def get_paginated_roles(
     if not total:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No roles are found. Start creating a new role.",
+            detail="There are no existing roles.",
         )
 
     roles = await get_roles(skip=skip, per_page=limit, async_session=session)
