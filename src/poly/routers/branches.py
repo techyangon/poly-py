@@ -51,4 +51,4 @@ async def create_new_branch(
             detail=f"Branch with name {branch.name} already exists.",
         )
 
-    return {"detail": f"{branch.name} branch is successfully created."}
+    return {"message": f"{branch.name} branch is successfully created."}
