@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 Permission = dict[str, str | list[str]]
 
@@ -28,6 +28,26 @@ class Branch(Base):
     name: str
     state: str
     township: str
+
+
+class NewBranch(BaseModel):
+    name: str
+    address: str
+    township_id: int
+
+    @field_validator("name")
+    @classmethod
+    def name_cannot_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Name cannot be empty.")
+        return v
+
+    @field_validator("address")
+    @classmethod
+    def address_cannot_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Address cannot be empty.")
+        return v
 
 
 class Roles(BaseModel):

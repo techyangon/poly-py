@@ -13,7 +13,7 @@ async def check_permission(
     enforcer: Annotated[AsyncEnforcer, Depends(get_enforcer)],
 ) -> str:
     is_allowed = enforcer.enforce(
-        username, request.url.path.split("/")[0], request.method
+        username, request.url.path.split("/")[1], request.method
     )
     if not is_allowed:
         raise HTTPException(
