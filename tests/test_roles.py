@@ -1,4 +1,5 @@
 import pytest
+from fastapi import status
 
 
 @pytest.mark.asyncio(scope="session")
@@ -10,6 +11,7 @@ async def test_get_roles(client, roles, user):
 
     data = response.json()
 
+    assert response.status_code == status.HTTP_200_OK
     assert data["roles"][0]["name"] == roles[0].name
     assert data["roles"][1]["name"] == roles[1].name
     assert data["total"] == 2

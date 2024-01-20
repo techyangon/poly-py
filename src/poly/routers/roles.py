@@ -14,7 +14,7 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 @router.get("/", response_model=Roles)
 async def get_paginated_roles(
     session: Annotated[async_sessionmaker, Depends(get_session)],
-    _: Annotated[bool, Depends(check_permission)],
+    _: Annotated[str, Depends(check_permission)],
     skip: int = 0,
     limit: int = 10,
 ):
