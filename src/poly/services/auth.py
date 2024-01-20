@@ -53,15 +53,16 @@ def generate_token(
     secret: str,
     username: str,
 ) -> str:
-    expires_delta = datetime.utcnow() + timedelta(minutes=expires_in)
-    claims = {
-        "aud": audience,
-        "exp": expires_delta,
-        "iss": issuer,
-        "sub": username,
-    }
-    encoded_jwt = jwt.encode(claims=claims, key=secret, algorithm="HS256")
-    return encoded_jwt
+    return jwt.encode(
+        claims={
+            "aud": audience,
+            "exp": datetime.utcnow() + timedelta(minutes=expires_in),
+            "iss": issuer,
+            "sub": username,
+        },
+        key=secret,
+        algorithm="HS256",
+    )
 
 
 async def authenticate(email: str, password: str, session: async_sessionmaker) -> User:

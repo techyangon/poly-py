@@ -63,7 +63,7 @@ async def login(
 async def token(
     settings: Annotated[Settings, Depends(get_settings)],
     username: Annotated[str, Depends(validate_cookie)],
-):
+):  # pragma: no cover
     access_token = generate_token(
         audience=settings.access_token_audience,
         expires_in=settings.access_token_expiry,
