@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 Permission = dict[str, str | list[str]]
 
@@ -35,18 +35,11 @@ class NewBranch(BaseModel):
     address: str
     township_id: int
 
-    @field_validator("name")
+    @field_validator("name", "address")
     @classmethod
-    def name_cannot_be_empty(cls, v: str) -> str:
+    def name_cannot_be_empty(cls, v: str, info: ValidationInfo) -> str:
         if not v.strip():
-            raise ValueError("Name cannot be empty.")
-        return v
-
-    @field_validator("address")
-    @classmethod
-    def address_cannot_be_empty(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("Address cannot be empty.")
+            raise ValueError(f"{info.field_name} cannot be empty.")
         return v
 
 

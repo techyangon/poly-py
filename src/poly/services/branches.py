@@ -1,6 +1,8 @@
 from datetime import datetime
 
+from asyncpg.exceptions import UniqueViolationError
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.orm import joinedload
 
@@ -45,3 +47,29 @@ async def get_branches_count(
     async with async_session() as session, session.begin():
         result = await session.execute(select(func.count()).select_from(Branch))
         return result.scalar_one()
+
+
+async def save_branch(
+    name: str,
+    address: str,
+    township_id: int,
+    created_by: str,
+    updated_by: str,
+    async_session: async_sessionmaker,
+):
+    async with async_session() as session:
+        try:
+            session.add(
+                Branch(
+                    name=name,
+                    address=address,
+                    township_id=township_id,
+                    created_by=created_by,
+                    updated_by=updated_by,
+                )
+            )
+            await session.commit()
+        except IntegrityError as error:
+            await session.rollback()
+            if error.orig and error.orig.__cause__.__class__ == UniqueViolationError:
+                raise ValueError

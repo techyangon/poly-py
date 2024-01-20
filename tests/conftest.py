@@ -199,10 +199,10 @@ async def branches(db_session, township, settings):
         yield result.all()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def permissions(settings):
-    permissions = ["GET"]
-    resources = ["roles"]
+    permissions = ["DELETE", "GET", "POST", "PUT"]
+    resources = ["branches", "locations", "resources", "roles"]
 
     policies = [
         ["role_admin", resource, permission]
