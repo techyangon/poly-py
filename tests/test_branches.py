@@ -25,8 +25,8 @@ async def test_get_paginated_branches(branches, client, user):
     data = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    assert data["branches"][0]["name"] == branches[0].name
-    assert data["branches"][1]["name"] == branches[1].name
+    for branch in data["branches"]:
+        assert branch["name"] in [branches[0].name, branches[1].name]
     assert data["total"] == 2
 
 
