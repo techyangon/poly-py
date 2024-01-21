@@ -141,3 +141,30 @@ async def test_update_branch(branches, client, db_session, user):
     async with db_session() as session, session.begin():
         branch = await session.get(Branch, 1)
         assert branch.name == "branch4"
+
+
+@pytest.mark.asyncio(scope="session")
+async def test_delete_branch_with_non_existent_branch(client, user):
+    response = await client.delete(
+        "/branches/4",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert data["detail"] == "Requested branch does not exist."
+
+
+@pytest.mark.asyncio(scope="session")
+async def test_delete_branch(branches, db_session, client, user):
+    response = await client.delete(
+        "/branches/2",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+    )
+    data = response.json()
+
+    assert data["message"] == "Branch is successfully deleted."
+
+    async with db_session() as session, session.begin():
+        branch = await session.get(Branch, 2)
+        assert branch.is_deleted is True

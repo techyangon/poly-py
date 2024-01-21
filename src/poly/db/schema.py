@@ -25,6 +25,7 @@ class Role(Base):
 class Branch(Base):
     address: str
     city: str
+    id: int
     name: str
     state: str
     township: str
