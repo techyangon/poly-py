@@ -44,7 +44,9 @@ def schema_upgrades() -> None:
             "updated_at", sa.DateTime, server_default=UTCNow(), onupdate=UTCNow()
         ),
         sa.Column("updated_by", sa.String, nullable=False, default="system"),
-        sa.ForeignKeyConstraint(["state_id"], ["states.id"], "fk_cities_state_id_states"),
+        sa.ForeignKeyConstraint(
+            ["state_id"], ["states.id"], "fk_cities_state_id_states"
+        ),
     )
 
 
