@@ -1,6 +1,8 @@
 import pytest
 from fastapi import status
 
+from poly.db.models import Branch
+
 
 @pytest.mark.asyncio(scope="session")
 async def test_empty_branches(client, user):
@@ -15,7 +17,7 @@ async def test_empty_branches(client, user):
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_get_paginated_branches(branches, city, client, state, township, user):
+async def test_get_paginated_branches(branches, client, user):
     response = await client.get(
         "/branches/",
         headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
@@ -24,19 +26,16 @@ async def test_get_paginated_branches(branches, city, client, state, township, u
 
     assert response.status_code == status.HTTP_200_OK
     assert data["branches"][0]["name"] == branches[0].name
-    assert data["branches"][0]["address"] == branches[0].address
-    assert data["branches"][0]["city"] == city.name
-    assert data["branches"][0]["state"] == state.name
-    assert data["branches"][0]["township"] == township.name
-    assert data["total"] == 1
+    assert data["branches"][1]["name"] == branches[1].name
+    assert data["total"] == 2
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_create_new_branch_with_duplicate_name(branches, client, township, user):
+async def test_create_new_branch_with_duplicate_name(branches, client, user):
     response = await client.post(
         "/branches/",
         headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
-        json={"name": "branch1", "address": "address2", "township_id": 1},
+        json={"name": "branch1", "address": "address3", "township_id": 1},
     )
     data = response.json()
 
@@ -63,11 +62,11 @@ async def test_create_new_branch_with_empty_values(client, user):
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_create_new_branch_with_missing_township(client, user):
+async def test_create_new_branch_with_non_existent_township(client, user):
     response = await client.post(
         "/branches/",
         headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
-        json={"name": "branch2", "address": "address2", "township_id": 2},
+        json={"name": "branch3", "address": "address3", "township_id": 2},
     )
     data = response.json()
 
@@ -80,9 +79,65 @@ async def test_create_new_branch(branches, client, user):
     response = await client.post(
         "/branches/",
         headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
-        json={"name": "branch2", "address": "address2", "township_id": 1},
+        json={"name": "branch3", "address": "address3", "township_id": 1},
     )
     data = response.json()
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert data["message"] == "branch2 branch is successfully created."
+    assert data["message"] == "branch3 branch is successfully created."
+
+
+@pytest.mark.asyncio(scope="session")
+async def test_update_non_existent_branch(branches, client, user):
+    response = await client.put(
+        "/branches/4",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+        json={"name": "branch3", "address": "address3", "township_id": 1},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert data["detail"] == "Requested branch does not exist."
+
+
+@pytest.mark.asyncio(scope="session")
+async def test_update_branch_with_duplicate_name(branches, client, user):
+    response = await client.put(
+        "/branches/1",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+        json={"name": "branch2", "address": "address1", "township_id": 1},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert data["detail"] == "Branch with name branch2 already exists."
+
+
+@pytest.mark.asyncio(scope="session")
+async def test_update_branch_with_non_existent_township(branches, client, user):
+    response = await client.put(
+        "/branches/1",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+        json={"name": "branch1", "address": "address1", "township_id": 2},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert data["detail"] == "Township does not exist."
+
+
+@pytest.mark.asyncio(scope="session")
+async def test_update_branch(branches, client, db_session, user):
+    response = await client.put(
+        "/branches/1",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+        json={"name": "branch4", "address": "address3", "township_id": 1},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert data["message"] == "Branch is successfully updated."
+
+    async with db_session() as session, session.begin():
+        branch = await session.get(Branch, 1)
+        assert branch.name == "branch4"

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
 from sqlalchemy import func, select
@@ -39,6 +40,41 @@ async def get_branches(
             )
             for branch in result.all()
         ]
+
+
+async def get_branch_by_id(
+    id: int, async_session: async_sessionmaker
+) -> Optional[Branch]:
+    async with async_session() as session, session.begin():
+        return await session.get(Branch, id)
+
+
+async def update_branch(
+    id: int,
+    name: str,
+    address: str,
+    township_id: int,
+    updated_by: str,
+    async_session: async_sessionmaker,
+):  # pragma: no cover
+    async with async_session() as session:
+        try:
+            branch = await session.get(Branch, id)
+            branch.name, branch.address, branch.township_id, branch.updated_by = (
+                name,
+                address,
+                township_id,
+                updated_by,
+            )
+            await session.commit()
+        except IntegrityError as error:
+            await session.rollback()
+            if error.orig:
+                if error.orig.__cause__.__class__ == UniqueViolationError:
+                    raise ValueError(f"Branch with name {name} already exists.")
+
+                if error.orig.__cause__.__class__ == ForeignKeyViolationError:
+                    raise ValueError("Township does not exist.")
 
 
 async def get_branches_count(

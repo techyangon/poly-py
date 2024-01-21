@@ -205,14 +205,23 @@ async def township(city, db_session):
 @pytest_asyncio.fixture(scope="session")
 async def branches(db_session, township, settings):
     async with db_session() as session, session.begin():
-        session.add(
-            Branch(
-                name="branch1",
-                address="address1",
-                township_id=township.id,
-                created_by=settings.admin_username,
-                updated_by=settings.admin_username,
-            )
+        session.add_all(
+            [
+                Branch(
+                    name="branch1",
+                    address="address1",
+                    township_id=township.id,
+                    created_by=settings.admin_username,
+                    updated_by=settings.admin_username,
+                ),
+                Branch(
+                    name="branch2",
+                    address="address2",
+                    township_id=township.id,
+                    created_by=settings.admin_username,
+                    updated_by=settings.admin_username,
+                ),
+            ]
         )
 
     async with db_session() as session, session.begin():

@@ -5,7 +5,13 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.db import get_session
 from poly.db.schema import Branches, NewBranch
-from poly.services.branches import get_branches, get_branches_count, save_branch
+from poly.services.branches import (
+    get_branch_by_id,
+    get_branches,
+    get_branches_count,
+    save_branch,
+    update_branch,
+)
 from poly.services.permissions import check_permission
 
 router = APIRouter(prefix="/branches", tags=["branches"])
@@ -52,3 +58,35 @@ async def create_new_branch(
         )
 
     return {"message": f"{branch.name} branch is successfully created."}
+
+
+@router.put("/{branch_id}")
+async def update_existing_branch(
+    branch: NewBranch,
+    branch_id: int,
+    session: Annotated[async_sessionmaker, Depends(get_session)],
+    username: Annotated[str, Depends(check_permission)],
+):
+    saved_branch = await get_branch_by_id(id=branch_id, async_session=session)
+    if not saved_branch:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Requested branch does not exist.",
+        )
+
+    try:
+        await update_branch(
+            id=branch_id,
+            name=branch.name,
+            address=branch.address,
+            township_id=branch.township_id,
+            updated_by=username,
+            async_session=session,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
+        )
+
+    return {"message": "Branch is successfully updated."}
