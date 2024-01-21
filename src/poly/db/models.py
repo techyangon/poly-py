@@ -105,6 +105,7 @@ class Branch(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(settings.name_length), unique=True)
     address: Mapped[str] = mapped_column(String(settings.address_length))
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     township_id: Mapped[int] = mapped_column(ForeignKey("townships.id"))
     township: Mapped["Township"] = relationship(back_populates="branches")
     created_at = mapped_column(DateTime, server_default=UTCNow())

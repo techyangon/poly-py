@@ -7,7 +7,6 @@ Create Date: 2024-01-16 20:16:11.958979
 """
 import sqlalchemy as sa
 from alembic import context, op
-from sqlalchemy.sql import column, table
 
 from poly.config import get_settings
 from poly.db import UTCNow
@@ -39,6 +38,7 @@ def schema_upgrades() -> None:
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("name", sa.String(settings.name_length), nullable=False, unique=True),
         sa.Column("address", sa.String(settings.address_length), nullable=False),
+        sa.Column("is_deleted", sa.Boolean, default=False),
         sa.Column("township_id", sa.Integer, nullable=False),
         sa.Column("created_at", sa.DateTime, server_default=UTCNow()),
         sa.Column("created_by", sa.String(settings.name_length), nullable=False),
@@ -46,7 +46,9 @@ def schema_upgrades() -> None:
             "updated_at", sa.DateTime, server_default=UTCNow(), onupdate=UTCNow()
         ),
         sa.Column("updated_by", sa.String(settings.name_length), nullable=False),
-        sa.ForeignKeyConstraint(["township_id"], ["townships.id"], "fk_branches_township_id_townships"),
+        sa.ForeignKeyConstraint(
+            ["township_id"], ["townships.id"], "fk_branches_township_id_townships"
+        ),
     )
 
 
