@@ -61,24 +61,3 @@ class Token(BaseModel):
     permissions: list[Permission]
     role: str
     token_type: str
-
-
-class Location(BaseModel):
-    name: str
-    value: int
-
-
-class Township(Location):
-    pass
-
-
-class City(Location):
-    townships: list[Township]
-
-
-class State(Location):
-    cities: list[City]
-
-
-class LocationResponse(BaseModel):
-    states: list[State]
