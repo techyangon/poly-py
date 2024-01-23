@@ -20,12 +20,8 @@ class Base(BaseModel):
     updated_by: str
 
 
-class Resource(BaseModel):
-    name: str
-
-
 class Resources(BaseModel):
-    resources: list[Resource]
+    resources: list[str]
 
 
 class Role(BaseModel):
