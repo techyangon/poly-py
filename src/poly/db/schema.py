@@ -1,6 +1,18 @@
-from pydantic import BaseModel, ValidationInfo, field_validator
+from typing import Annotated
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    StringConstraints,
+    ValidationInfo,
+    field_validator,
+)
+
+from poly.config import get_settings
 
 Permission = dict[str, str | list[str]]
+
+settings = get_settings()
 
 
 class Base(BaseModel):
@@ -18,8 +30,18 @@ class Resources(BaseModel):
     resources: list[Resource]
 
 
-class Role(Base):
-    name: str
+class Role(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: Annotated[str, StringConstraints(max_length=settings.name_length)]
+
+
+class Roles(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    roles: list[Role]
+    total: int
 
 
 class Branch(Base):
@@ -42,11 +64,6 @@ class NewBranch(BaseModel):
         if not v.strip():
             raise ValueError(f"{info.field_name} cannot be empty.")
         return v
-
-
-class Roles(BaseModel):
-    roles: list[Role]
-    total: int
 
 
 class Branches(BaseModel):

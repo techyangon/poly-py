@@ -15,8 +15,8 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 async def get_paginated_roles(
     session: Annotated[async_sessionmaker, Depends(get_session)],
     _: Annotated[str, Depends(check_permission)],
-    skip: int = 0,
-    limit: int = 10,
+    id: int = 0,
+    per_page: int = 10,
 ):
     total = await get_roles_count(async_session=session)
     if not total:
@@ -25,6 +25,6 @@ async def get_paginated_roles(
             detail="There are no existing roles.",
         )
 
-    roles = await get_roles(skip=skip, per_page=limit, async_session=session)
+    roles = await get_roles(skip_id=id, limit=per_page, async_session=session)
 
     return {"roles": roles, "total": total}
