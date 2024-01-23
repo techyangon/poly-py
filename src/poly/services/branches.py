@@ -12,7 +12,7 @@ from poly.db.schema import Branch as BranchResponse
 
 
 async def get_branches(
-    id_skip: int, limit: int, async_session: async_sessionmaker
+    skip_id: int, limit: int, async_session: async_sessionmaker
 ) -> list[BranchResponse]:
     async with async_session() as session, session.begin():
         result = await session.scalars(
@@ -26,7 +26,7 @@ async def get_branches(
                 .load_only(State.name)
             )
             .where(Branch.is_deleted.is_(False))
-            .where(Branch.id > id_skip)
+            .where(Branch.id > skip_id)
             .order_by(Branch.created_at)
             .limit(limit)
         )
@@ -38,10 +38,8 @@ async def get_branches(
                 township=branch.township.name,
                 city=branch.township.city.name,
                 state=branch.township.city.state.name,
-                created_at=datetime.isoformat(branch.created_at) + "Z",
                 created_by=branch.created_by,
                 updated_at=datetime.isoformat(branch.updated_at) + "Z",
-                updated_by=branch.updated_by,
             )
             for branch in result.all()
         ]

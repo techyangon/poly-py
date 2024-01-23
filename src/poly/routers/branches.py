@@ -32,7 +32,7 @@ async def get_paginated_branches(
             detail="There are no existing branches.",
         )
 
-    branches = await get_branches(id_skip=id, limit=per_page, async_session=session)
+    branches = await get_branches(skip_id=id, limit=per_page, async_session=session)
 
     return {"branches": branches, "total": total}
 
@@ -97,7 +97,7 @@ async def update_existing_branch(
 async def delete_existing_branch(
     branch_id: int,
     session: Annotated[async_sessionmaker, Depends(get_session)],
-    username: Annotated[str, Depends(check_permission)],
+    _: Annotated[str, Depends(check_permission)],
 ):
     saved_branch = await get_branch_by_id(id=branch_id, async_session=session)
     if not saved_branch:

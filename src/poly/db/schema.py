@@ -13,13 +13,6 @@ from poly.config import get_settings
 settings = get_settings()
 
 
-class Base(BaseModel):
-    created_at: str
-    created_by: str
-    updated_at: str
-    updated_by: str
-
-
 class Resources(BaseModel):
     resources: list[str]
 
@@ -38,13 +31,15 @@ class Roles(BaseModel):
     total: int
 
 
-class Branch(Base):
-    address: str
-    city: str
+class Branch(BaseModel):
     id: int
     name: str
-    state: str
+    address: str
     township: str
+    city: str
+    state: str
+    created_by: str
+    updated_at: str
 
 
 class NewBranch(BaseModel):
