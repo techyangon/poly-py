@@ -22,6 +22,11 @@ class Settings(BaseSettings):
         title="ACCESS_TOKEN_ISSUER",
         description="Access token issuer",
     )
+    address_length: int = Field(
+        ...,
+        title="ADDRESS_LENGTH",
+        description="Physical address",
+    )
     admin_mail: str = Field(
         ...,
         title="ADMIN_MAIL",
@@ -86,6 +91,11 @@ class Settings(BaseSettings):
         ...,
         title="SECRET_KEY",
         description="Secret for hashing access token",
+    )
+    townships_file: str = Field(
+        "",
+        title="TOWNSHIPS_FILE",
+        description="CSV file for townships data",
     )
 
 

@@ -64,6 +64,7 @@ def data_upgrades() -> None:
             {"name": "audit", "created_by": "system", "updated_by": "system"},
             {"name": "branches", "created_by": "system", "updated_by": "system"},
             {"name": "dashboard", "created_by": "system", "updated_by": "system"},
+            {"name": "locations", "created_by": "system", "updated_by": "system"},
             {"name": "roles", "created_by": "system", "updated_by": "system"},
             {"name": "schedules", "created_by": "system", "updated_by": "system"},
             {"name": "staff", "created_by": "system", "updated_by": "system"},

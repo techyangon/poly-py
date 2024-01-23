@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.config import Settings, get_settings
 from poly.db import get_engine
-from poly.db.models import Base, Resource, Role, User
+from poly.db.models import Base, Branch, City, Resource, Role, State, Township, User
 from poly.main import app
+from poly.rbac.models import get_enforcer
 from poly.services import oauth2_scheme
 from poly.services.auth import get_active_user, password_context, validate_access_token
 
@@ -30,7 +31,7 @@ async def override_validate_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Empty token",
         )
-    return "user"
+    return user.name
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -59,65 +60,190 @@ async def db_session(settings):
 @pytest_asyncio.fixture(scope="session")
 async def resources(db_session):
     async with db_session() as session, session.begin():
-        role = Resource(name="role", created_by="system", updated_by="system")
-        staff = Resource(name="staff", created_by="system", updated_by="system")
-        session.add_all([role, staff])
+        session.add_all(
+            [
+                Resource(name="role", created_by="system", updated_by="system"),
+                Resource(name="staff", created_by="system", updated_by="system"),
+            ]
+        )
 
     async with db_session() as session, session.begin():
-        query = select(Resource).order_by(Resource.created_at)
-        result = await session.scalars(query)
+        result = await session.scalars(select(Resource).order_by(Resource.created_at))
         yield result.all()
 
 
 @pytest_asyncio.fixture(scope="session")
 async def roles(db_session):
     async with db_session() as session, session.begin():
-        admin = Role(name="admin", created_by="system", updated_by="system")
-        staff = Role(name="staff", created_by="system", updated_by="system")
-        session.add_all([admin, staff])
+        session.add_all(
+            [
+                Role(name="admin", created_by="system", updated_by="system"),
+                Role(name="staff", created_by="system", updated_by="system"),
+            ]
+        )
 
     async with db_session() as session, session.begin():
-        query = select(Role).order_by(Role.created_at)
-        result = await session.scalars(query)
+        result = await session.scalars(select(Role).order_by(Role.created_at))
         yield result.all()
 
 
 @pytest_asyncio.fixture(scope="session")
-async def user(db_session):
+async def user(db_session, settings):
     async with db_session() as session, session.begin():
-        user = User(
-            name="user",
-            email="user@mail.com",
-            password=password_context.hash("passwd"),
-            is_active=True,
-            created_by="system",
-            updated_by="system",
+        session.add(
+            User(
+                name=settings.admin_username,
+                email=settings.admin_mail,
+                password=password_context.hash("passwd"),
+                is_active=True,
+                created_by="system",
+                updated_by="system",
+            )
         )
-        session.add(user)
 
     async with db_session() as session, session.begin():
-        query = select(User).where(User.email == "user@mail.com")
-        result = await session.scalars(query)
+        result = await session.scalars(
+            select(User).where(User.email == settings.admin_mail)
+        )
         yield result.one()
 
 
 @pytest_asyncio.fixture(scope="session")
 async def inactive_user(db_session):
     async with db_session() as session, session.begin():
-        user = User(
-            name="user.inactive",
-            email="user-inactive@mail.com",
-            password=password_context.hash("passwd"),
-            is_active=False,
-            created_by="system",
-            updated_by="system",
+        session.add(
+            User(
+                name="user.inactive",
+                email="user-inactive@mail.com",
+                password=password_context.hash("passwd"),
+                is_active=False,
+                created_by="system",
+                updated_by="system",
+            )
         )
-        session.add(user)
 
     async with db_session() as session, session.begin():
-        query = select(User).where(User.email == "user-inactive@mail.com")
-        result = await session.scalars(query)
+        result = await session.scalars(
+            select(User).where(User.email == "user-inactive@mail.com")
+        )
         yield result.one()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def unauthorized_user(db_session):
+    async with db_session() as session, session.begin():
+        session.add(
+            User(
+                name="user.unauthorized",
+                email="user-unauthorized@mail.com",
+                password=password_context.hash("passwd"),
+                is_active=True,
+                created_by="system",
+                updated_by="system",
+            )
+        )
+
+    async with db_session() as session, session.begin():
+        result = await session.scalars(
+            select(User).where(User.email == "user-unauthorized@mail.com")
+        )
+        yield result.one()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def state(db_session):
+    async with db_session() as session, session.begin():
+        session.add(
+            State(
+                name="state1",
+                created_by="system",
+                updated_by="system",
+            )
+        )
+
+    async with db_session() as session, session.begin():
+        result = await session.scalars(select(State).where(State.name == "state1"))
+        yield result.one()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def city(db_session, state):
+    async with db_session() as session, session.begin():
+        session.add(
+            City(
+                name="city1",
+                state_id=state.id,
+                created_by="system",
+                updated_by="system",
+            )
+        )
+
+    async with db_session() as session, session.begin():
+        result = await session.scalars(select(City).where(City.name == "city1"))
+        yield result.one()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def township(city, db_session):
+    async with db_session() as session, session.begin():
+        session.add(
+            Township(
+                name="township1",
+                city_id=city.id,
+                created_by="system",
+                updated_by="system",
+            )
+        )
+
+    async with db_session() as session, session.begin():
+        result = await session.scalars(
+            select(Township).where(Township.name == "township1")
+        )
+        yield result.one()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def branches(db_session, township, settings):
+    async with db_session() as session, session.begin():
+        session.add_all(
+            [
+                Branch(
+                    name="branch1",
+                    address="address1",
+                    township_id=township.id,
+                    created_by=settings.admin_username,
+                    updated_by=settings.admin_username,
+                ),
+                Branch(
+                    name="branch2",
+                    address="address2",
+                    township_id=township.id,
+                    created_by=settings.admin_username,
+                    updated_by=settings.admin_username,
+                ),
+            ]
+        )
+
+    async with db_session() as session, session.begin():
+        result = await session.scalars(select(Branch).order_by(Branch.created_at))
+        yield result.all()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def permissions(settings):
+    permissions = ["DELETE", "GET", "POST", "PUT"]
+    resources = ["branches", "locations", "resources", "roles"]
+
+    policies = [
+        ["role_admin", resource, permission]
+        for resource in resources
+        for permission in permissions
+    ]
+
+    enforcer = await get_enforcer(settings=settings)
+
+    await enforcer.add_named_policies("p", policies)
+    await enforcer.add_role_for_user(settings.admin_username, "role_admin")
 
 
 @pytest_asyncio.fixture(scope="session")

@@ -17,7 +17,7 @@ async def get_enforcer(
     enforcer = AsyncEnforcer(model=model)
 
     async with get_engine(settings=settings) as engine:
-        adapter = Adapter(engine=engine)
+        adapter = Adapter(engine=engine, warning=False)
         await adapter.create_table()
 
         enforcer.set_adapter(adapter)
