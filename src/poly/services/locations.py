@@ -24,10 +24,9 @@ async def save_city(
     name: str, state: str, async_session: async_sessionmaker
 ):  # pragma: no cover
     async with async_session() as session, session.begin():
-        result = await session.scalars(select(State).where(State.name == state))
-        saved_state = result.one()
+        state_id = await session.scalar(select(State.id).where(State.name == state))
 
-        session.add(City(name=name, state_id=saved_state.id))
+        session.add(City(name=name, state_id=state_id))
 
 
 async def save_state_and_city(
@@ -46,9 +45,6 @@ async def save_townships(
     city: str, townships: list[str], async_session: async_sessionmaker
 ):  # pragma: no cover
     async with async_session() as session, session.begin():
-        result = await session.scalars(select(City).where(City.name == city))
-        saved_city = result.one()
+        city_id = await session.scalar(select(City.id).where(City.name == city))
 
-        pending_tsps = [Township(name=tsp, city_id=saved_city.id) for tsp in townships]
-
-        session.add_all(pending_tsps)
+        session.add_all([Township(name=tsp, city_id=city_id) for tsp in townships])

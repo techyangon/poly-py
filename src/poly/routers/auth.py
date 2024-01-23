@@ -43,7 +43,7 @@ async def login(
         username=user.name,
     )
 
-    # Enforcer returns a list in the form of [[{username}, {rolename}]]
+    # Returns a list in the form of [[{username}, {rolename}]]
     role = enforcer.get_filtered_named_grouping_policy("g", 0, user.name)[0][1]
     permissions = get_permissions_by_role(enforcer=enforcer, role=role)
 

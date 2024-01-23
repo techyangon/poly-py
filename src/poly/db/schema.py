@@ -10,8 +10,6 @@ from pydantic import (
 
 from poly.config import get_settings
 
-Permission = dict[str, str | list[str]]
-
 settings = get_settings()
 
 
@@ -71,6 +69,11 @@ class Branches(BaseModel):
     total: int
 
 
+class Permission(BaseModel):
+    resource: str
+    actions: list[str]
+
+
 class Token(BaseModel):
     access_token: str
     expires_in: int
@@ -78,3 +81,30 @@ class Token(BaseModel):
     permissions: list[Permission]
     role: str
     token_type: str
+
+
+class Township(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: Annotated[str, StringConstraints(max_length=settings.name_length)]
+
+
+class City(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: Annotated[str, StringConstraints(max_length=settings.name_length)]
+    townships: list[Township]
+
+
+class State(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: Annotated[str, StringConstraints(max_length=settings.name_length)]
+    cities: list[City]
+
+
+class Locations(BaseModel):
+    states: list[State]
