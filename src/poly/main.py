@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 
 from poly import __version__
-from poly.routers import auth, branches, locations, resources, roles
+from poly.routers import auth, branches, locations, resources, roles, user
 from poly.services.auth import validate_access_token
 
 app = FastAPI()
@@ -12,6 +12,7 @@ app.include_router(branches.router)
 app.include_router(locations.router)
 app.include_router(resources.router)
 app.include_router(roles.router)
+app.include_router(user.router)
 
 
 @app.get("/")
