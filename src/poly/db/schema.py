@@ -112,16 +112,13 @@ class Profile(BaseModel):
 
 class UserUpdate(BaseModel):
     id: int
-    password: str
+    current_password: str
+    new_password: str
 
-    @field_validator("password")
+    @field_validator("new_password")
     @classmethod
     def validate_password(cls, v) -> str:
-        if not re.match(
-            r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?\W).{8,}$",
-            v.strip(),
-        ):
-            raise ValueError(
-                "Password must contain at least one upper case letter, one digit, one special character."
-            )
-        return v.strip()
+        v = v.strip()
+        if not re.match(r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?\W).{8,}$", v):
+            raise ValueError("Invalid password. Please check the rules again.")
+        return v
