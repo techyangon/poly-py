@@ -5,6 +5,7 @@ Revises:
 Create Date: 2023-07-15 02:01:16.867824
 
 """
+
 import sqlalchemy as sa
 from alembic import context, op
 from sqlalchemy.sql import column, table
@@ -64,7 +65,6 @@ def data_upgrades() -> None:
             {"name": "audit", "created_by": "system", "updated_by": "system"},
             {"name": "branches", "created_by": "system", "updated_by": "system"},
             {"name": "dashboard", "created_by": "system", "updated_by": "system"},
-            {"name": "locations", "created_by": "system", "updated_by": "system"},
             {"name": "roles", "created_by": "system", "updated_by": "system"},
             {"name": "schedules", "created_by": "system", "updated_by": "system"},
             {"name": "staff", "created_by": "system", "updated_by": "system"},

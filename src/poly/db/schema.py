@@ -1,3 +1,4 @@
+import re
 from typing import Annotated
 
 from pydantic import (
@@ -99,3 +100,28 @@ class State(BaseModel):
 
 class Locations(BaseModel):
     states: list[State]
+
+
+class Profile(BaseModel):
+    created_at: str
+    email: str
+    id: int
+    name: str
+    role: str
+
+
+class UserUpdate(BaseModel):
+    id: int
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v) -> str:
+        if not re.match(
+            r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?\W).{8,}$",
+            v.strip(),
+        ):
+            raise ValueError(
+                "Password must contain at least one upper case letter, one digit, one special character."
+            )
+        return v.strip()
