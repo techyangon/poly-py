@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated
 
 from casbin import AsyncEnforcer
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.db import get_session
@@ -38,9 +38,24 @@ async def get_user_profile(
 async def update_user_password(
     user: UserUpdate,
     session: Annotated[async_sessionmaker, Depends(get_session)],
-    _: Annotated[str, Depends(validate_access_token)],
+    username: Annotated[str, Depends(validate_access_token)],
 ):
-    user.password = password_context.hash(user.password)
+    saved_user = await get_user_by_name(name=username, async_session=session)
+
+    # It is already checked in `validate_access_token`. This is to satisfy pyright.
+    if not saved_user:  # pragma: no cover
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Requested user does not exist.",
+        )
+
+    if not password_context.verify(user.current_password, saved_user.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+
+    user.new_password = password_context.hash(user.new_password)
     await update_user(fields=user, async_session=session)
 
     return {"message": "User password is updated."}
