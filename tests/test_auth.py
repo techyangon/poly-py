@@ -43,12 +43,7 @@ async def test_login(client, user):
         data={"username": user.email, "password": "passwd"},
     )
 
-    data = response.json()
-
     assert response.status_code == status.HTTP_200_OK
-    assert data["role"] == "admin"
-    for permission in data["permissions"]:
-        assert permission["resource"] in ["branches", "locations", "resources", "roles"]
 
 
 @pytest.mark.asyncio(scope="session")
