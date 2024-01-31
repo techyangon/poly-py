@@ -65,6 +65,7 @@ class Branches(BaseModel):
 class Token(BaseModel):
     access_token: str
     expires_in: int
+    name: str
     token_type: str
 
 
