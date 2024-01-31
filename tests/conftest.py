@@ -232,13 +232,15 @@ async def branches(db_session, township, settings):
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def permissions(settings):
     permissions = ["DELETE", "GET", "POST", "PUT"]
-    resources = ["branches", "locations", "resources", "roles"]
+    resources = ["branches", "roles"]
 
     policies = [
         ["role_admin", resource, permission]
         for resource in resources
         for permission in permissions
     ]
+    policies.append(["role_admin", "locations", "GET"])
+    policies.append(["role_admin", "resources", "GET"])
 
     enforcer = await get_enforcer(settings=settings)
 

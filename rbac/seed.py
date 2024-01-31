@@ -24,6 +24,8 @@ async def upgrade(settings: Settings):
         for resource in resources
         for permission in permissions
     ]
+    policies.append(["role_admin", "locations", "GET"])
+    policies.append(["role_admin", "resources", "GET"])
 
     enforcer = await get_enforcer(settings=settings)
 

@@ -51,7 +51,8 @@ class NewBranch(BaseModel):
     @field_validator("name", "address")
     @classmethod
     def name_cannot_be_empty(cls, v: str, info: ValidationInfo) -> str:
-        if not v.strip():
+        v = v.strip()
+        if not v:
             raise ValueError(f"{info.field_name} cannot be empty.")
         return v
 
@@ -61,18 +62,20 @@ class Branches(BaseModel):
     total: int
 
 
+class Token(BaseModel):
+    access_token: str
+    expires_in: int
+    token_type: str
+
+
 class Permission(BaseModel):
     resource: str
     actions: list[str]
 
 
-class Token(BaseModel):
-    access_token: str
-    expires_in: int
-    name: str
-    permissions: list[Permission]
+class Permissions(BaseModel):
     role: str
-    token_type: str
+    permissions: list[Permission]
 
 
 class Township(BaseModel):
@@ -119,6 +122,6 @@ class UserUpdate(BaseModel):
     @classmethod
     def validate_password(cls, v) -> str:
         v = v.strip()
-        if not re.match(r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?\W).{8,}$", v):
+        if not re.match(r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?\W)\S{8,}$", v):
             raise ValueError("Invalid password. Please check the rules again.")
         return v
