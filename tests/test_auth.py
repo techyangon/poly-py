@@ -42,8 +42,10 @@ async def test_login(client, user):
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         data={"username": user.email, "password": "passwd"},
     )
+    data = response.json()
 
     assert response.status_code == status.HTTP_200_OK
+    assert data["name"] == user.name
 
 
 @pytest.mark.asyncio(scope="session")
