@@ -1,13 +1,15 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.db import get_session
-from poly.db.schema import Branches, NewBranch
+from poly.db.schema import Branch, Branches, NewBranch
 from poly.services.branches import (
     delete_branch,
     get_branch_by_id,
+    get_branch_by_id_with_location,
     get_branches,
     get_branches_count,
     save_branch,
@@ -35,6 +37,29 @@ async def get_paginated_branches(
     branches = await get_branches(skip_id=id, limit=per_page, async_session=session)
 
     return {"branches": branches, "total": total}
+
+
+@router.get("/{branch_id}", response_model=Branch)
+async def get_single_branch(
+    branch_id: int,
+    session: Annotated[async_sessionmaker, Depends(get_session)],
+):
+    branch = await get_branch_by_id_with_location(id=branch_id, async_session=session)
+    if not branch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Requested branch does not exist.",
+        )
+    return {
+        "address": branch.address,
+        "city": branch.township.city.name,
+        "created_by": branch.created_by,
+        "id": branch.id,
+        "name": branch.name,
+        "state": branch.township.city.state.name,
+        "township": branch.township.name,
+        "updated_at": datetime.isoformat(branch.updated_at) + "Z",
+    }
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

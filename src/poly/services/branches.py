@@ -52,6 +52,27 @@ async def get_branch_by_id(
         return await session.get(Branch, id)
 
 
+async def get_branch_by_id_with_location(
+    id: int, async_session: async_sessionmaker
+) -> Optional[Branch]:  # pragma: no cover
+    async with async_session() as session, session.begin():
+        result = await session.scalars(
+            select(Branch)
+            .options(
+                joinedload(Branch.township)
+                .load_only(Township.name)
+                .joinedload(Township.city)
+                .load_only(City.name)
+                .joinedload(City.state)
+                .load_only(State.name)
+            )
+            .where(Branch.id == id)
+            .where(Branch.is_deleted.is_(False))
+            .limit(1)
+        )
+        return result.one_or_none()
+
+
 async def get_branches_count(
     async_session: async_sessionmaker,
 ) -> int:  # pragma: no cover
