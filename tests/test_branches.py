@@ -31,6 +31,36 @@ async def test_get_paginated_branches(branches, client, user):
 
 
 @pytest.mark.asyncio(scope="session")
+async def test_get_single_branch_with_wrong_id(branches, client, user):
+    response = await client.get(
+        "/branches/3",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+    )
+    data = response.json()
+
+    assert response.status_code == 404
+    assert data["detail"] == "Requested branch does not exist."
+
+
+@pytest.mark.asyncio(scope="session")
+async def test_get_single_branch(branches, client, user):
+    response = await client.get(
+        "/branches/1",
+        headers={"Authorization": "Bearer eyabc.def.ghi", "X-Username": user.name},
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert data["address"] == "address1"
+    assert data["city"] == "city1"
+    assert data["created_by"] == user.name
+    assert data["id"] == 1
+    assert data["name"] == "branch1"
+    assert data["state"] == "state1"
+    assert data["township"] == "township1"
+
+
+@pytest.mark.asyncio(scope="session")
 async def test_create_new_branch_with_duplicate_name(branches, client, user):
     response = await client.post(
         "/branches/",
