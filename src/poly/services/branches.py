@@ -38,8 +38,6 @@ async def get_branches(
                 township=branch.township.name,
                 city=branch.township.city.name,
                 state=branch.township.city.state.name,
-                created_by=branch.created_by,
-                updated_at=datetime.isoformat(branch.updated_at) + "Z",
             )
             for branch in result.all()
         ]

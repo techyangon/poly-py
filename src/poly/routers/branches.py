@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.db import get_session
-from poly.db.schema import BranchAbbr, Branches, NewBranch
+from poly.db.schema import BranchDetails, Branches, NewBranch
 from poly.services.branches import (
     delete_branch,
     get_branch_by_id,
@@ -39,7 +39,7 @@ async def get_paginated_branches(
     return {"branches": branches, "total": total}
 
 
-@router.get("/{branch_id}", response_model=BranchAbbr)
+@router.get("/{branch_id}", response_model=BranchDetails)
 async def get_single_branch(
     branch_id: int,
     session: Annotated[async_sessionmaker, Depends(get_session)],
@@ -53,12 +53,14 @@ async def get_single_branch(
     return {
         "address": branch.address,
         "city": branch.township.city.id,
+        "created_at": datetime.isoformat(branch.created_at) + "Z",
         "created_by": branch.created_by,
         "id": branch.id,
         "name": branch.name,
         "state": branch.township.city.state.id,
         "township": branch.township.id,
         "updated_at": datetime.isoformat(branch.updated_at) + "Z",
+        "updated_by": branch.updated_by,
     }
 
 

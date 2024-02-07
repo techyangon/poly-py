@@ -39,19 +39,19 @@ class Branch(BaseModel):
     township: str
     city: str
     state: str
-    created_by: str
-    updated_at: str
 
 
-class BranchAbbr(BaseModel):
+class BranchDetails(BaseModel):
     id: int
     name: str
     address: str
     township: int
     city: int
     state: int
+    created_at: str
     created_by: str
     updated_at: str
+    updated_by: str
 
 
 class NewBranch(BaseModel):
