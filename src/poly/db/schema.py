@@ -43,6 +43,17 @@ class Branch(BaseModel):
     updated_at: str
 
 
+class BranchAbbr(BaseModel):
+    id: int
+    name: str
+    address: str
+    township: int
+    city: int
+    state: int
+    created_by: str
+    updated_at: str
+
+
 class NewBranch(BaseModel):
     name: str
     address: str

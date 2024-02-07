@@ -52,12 +52,12 @@ async def test_get_single_branch(branches, client, user):
 
     assert response.status_code == status.HTTP_200_OK
     assert data["address"] == "address1"
-    assert data["city"] == "city1"
+    assert data["city"] == 1
     assert data["created_by"] == user.name
     assert data["id"] == 1
     assert data["name"] == "branch1"
-    assert data["state"] == "state1"
-    assert data["township"] == "township1"
+    assert data["state"] == 1
+    assert data["township"] == 1
 
 
 @pytest.mark.asyncio(scope="session")
