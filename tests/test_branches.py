@@ -58,6 +58,7 @@ async def test_get_single_branch(branches, client, user):
     assert data["name"] == "branch1"
     assert data["state"] == 1
     assert data["township"] == 1
+    assert data["updated_by"] == user.name
 
 
 @pytest.mark.asyncio(scope="session")
