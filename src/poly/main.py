@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
+from casbin import AsyncEnforcer, Model
+from casbin_async_sqlalchemy_adapter import Adapter
 from fastapi import APIRouter, Depends, FastAPI
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from poly import __version__
-from poly.config import get_settings
+from poly.config import get_rbac_models, get_settings
 from poly.routers import auth, branches, locations, permissions, resources, roles, user
 from poly.services.auth import validate_access_token
 
@@ -33,10 +35,23 @@ async def lifespan(app: FastAPI):
     )
     engine = create_async_engine("".join(uri), echo=True, echo_pool="debug")
 
-    app.state.engine = engine
+    model = Model()
+    model.load_model_from_text(text=get_rbac_models())
+
+    enforcer = AsyncEnforcer(model=model)
+
+    adapter = Adapter(engine=engine, warning=False)
+    await adapter.create_table()
+
+    enforcer.set_adapter(adapter)
+
+    app.state.enforcer = enforcer
     app.state.async_session = async_sessionmaker(engine, expire_on_commit=False)
 
     yield
+
+    app.state.enforcer = {}
+    app.state.async_session = {}
 
     await engine.dispose()
 
