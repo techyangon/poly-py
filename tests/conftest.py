@@ -1,15 +1,16 @@
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 import pytest_asyncio
-from fastapi import Depends, HTTPException, status
+from asgi_lifespan import LifespanManager
+from fastapi import Depends, FastAPI, HTTPException, status
 from httpx import AsyncClient
 from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from poly.config import Settings, get_settings
-from poly.db import get_engine
 from poly.db.models import Base, Branch, City, Resource, Role, State, Township, User
-from poly.main import app
+from poly.main import create_app
 from poly.rbac.models import get_enforcer
 from poly.services import oauth2_scheme
 from poly.services.auth import get_active_user, password_context, validate_access_token
@@ -19,6 +20,25 @@ def override_get_settings() -> Settings:
     return Settings(
         _env_file=".env.development", _env_file_encoding="utf-8"  # pyright: ignore
     )
+
+
+@asynccontextmanager
+async def override_lifespan(app: FastAPI):
+    settings = override_get_settings()
+    uri = (
+        f"postgresql+asyncpg://"
+        f"{settings.db_username}:{settings.db_password}@"
+        f"{settings.db_host}:{settings.db_port}/"
+        f"{settings.db_name}"
+    )
+    engine = create_async_engine("".join(uri), echo=True, echo_pool="debug")
+
+    app.state.engine = engine
+    app.state.async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+    yield
+
+    await engine.dispose()
 
 
 async def override_validate_access_token(
@@ -42,19 +62,34 @@ def settings():
 
 
 @pytest_asyncio.fixture(scope="session")
-async def db_session(settings):
-    async with get_engine(settings=settings) as engine:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+async def db_engine(settings):
+    settings = override_get_settings()
+    uri = (
+        f"postgresql+asyncpg://"
+        f"{settings.db_username}:{settings.db_password}@"
+        f"{settings.db_host}:{settings.db_port}/"
+        f"{settings.db_name}"
+    )
+    engine = create_async_engine("".join(uri), echo=True, echo_pool="debug")
 
-        yield async_sessionmaker(engine, expire_on_commit=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-        async with engine.begin() as conn:
-            await conn.execute(text("SET session_replication_role = 'replica';"))
+    yield engine
 
-            for table in reversed(Base.metadata.sorted_tables):
-                await conn.execute(table.delete())
-                await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
+    async with engine.begin() as conn:
+        await conn.execute(text("SET session_replication_role = 'replica';"))
+
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(table.delete())
+            await conn.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART;"))
+
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def db_session(db_engine):
+    yield async_sessionmaker(db_engine, expire_on_commit=False)
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -250,8 +285,14 @@ async def permissions(settings):
 
 @pytest_asyncio.fixture(scope="session")
 async def client():
-    async with AsyncClient(app=app, base_url="http://localhost/") as client:
-        app.dependency_overrides[get_settings] = override_get_settings
-        app.dependency_overrides[validate_access_token] = override_validate_access_token
-        yield client
-        app.dependency_overrides = {}
+    app = create_app(lifespan=override_lifespan)
+    async with LifespanManager(app=app) as manager:
+        async with AsyncClient(
+            app=manager.app, base_url="http://localhost/"
+        ) as async_client:
+            app.dependency_overrides[get_settings] = override_get_settings
+            app.dependency_overrides[validate_access_token] = (
+                override_validate_access_token
+            )
+            yield async_client
+            app.dependency_overrides = {}
