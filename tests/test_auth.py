@@ -51,14 +51,14 @@ async def test_login(client, user):
 @pytest.mark.asyncio(scope="session")
 async def test_get_active_user(db_session, inactive_user, user):
     with pytest.raises(HTTPException) as exc_info:
-        await get_active_user("non_user", db_session)
+        await get_active_user(async_session=db_session, username="non_user")
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
     assert exc_info.value.detail == "User not found"
 
     with pytest.raises(HTTPException) as exc_info:
-        await get_active_user(inactive_user.name, db_session)
+        await get_active_user(async_session=db_session, username=inactive_user.name)
     assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
     assert exc_info.value.detail == "Inactive user"
 
-    result = await get_active_user("user", db_session)
+    result = await get_active_user(async_session=db_session, username="user")
     assert result.name == user.name

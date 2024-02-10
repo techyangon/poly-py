@@ -1,13 +1,9 @@
 from datetime import datetime
 from typing import Annotated
 
-from casbin import AsyncEnforcer
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from poly.db import get_session
 from poly.db.schema import Profile, UserUpdate
-from poly.rbac.models import get_enforcer
 from poly.services.auth import password_context, validate_access_token
 from poly.services.user import get_user_by_name, update_user
 
@@ -16,11 +12,14 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 
 @router.get("/", response_model=Profile)
 async def get_user_profile(
-    enforcer: Annotated[AsyncEnforcer, Depends(get_enforcer)],
-    session: Annotated[async_sessionmaker, Depends(get_session)],
+    request: Request,
     username: Annotated[str, Depends(validate_access_token)],
 ):
-    user = await get_user_by_name(name=username, async_session=session)
+    enforcer = request.app.state.enforcer
+
+    user = await get_user_by_name(
+        name=username, async_session=request.app.state.async_session
+    )
 
     if user:
         role = enforcer.get_filtered_named_grouping_policy("g", 0, user.name)[0][1]
@@ -36,11 +35,13 @@ async def get_user_profile(
 
 @router.put("/")
 async def update_user_password(
+    request: Request,
     user: UserUpdate,
-    session: Annotated[async_sessionmaker, Depends(get_session)],
     username: Annotated[str, Depends(validate_access_token)],
 ):
-    saved_user = await get_user_by_name(name=username, async_session=session)
+    saved_user = await get_user_by_name(
+        name=username, async_session=request.app.state.async_session
+    )
 
     # It is already checked in `validate_access_token`. This is to satisfy pyright.
     if not saved_user:  # pragma: no cover
@@ -56,6 +57,6 @@ async def update_user_password(
         )
 
     user.new_password = password_context.hash(user.new_password)
-    await update_user(fields=user, async_session=session)
+    await update_user(fields=user, async_session=request.app.state.async_session)
 
     return {"message": "User password is updated."}

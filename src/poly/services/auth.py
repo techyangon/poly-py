@@ -1,14 +1,13 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Mapping
 
-from fastapi import Cookie, Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, Request, status
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.config import Settings, get_settings
-from poly.db import get_session
 from poly.db.models import User
 from poly.services import oauth2_scheme
 from poly.services.user import get_user_by_email, get_user_by_name
@@ -81,11 +80,8 @@ async def authenticate(email: str, password: str, session: async_sessionmaker) -
     return user
 
 
-async def get_active_user(
-    x_username: Annotated[str, Header()],
-    session: Annotated[async_sessionmaker, Depends(get_session)],
-) -> User:
-    user = await get_user_by_name(name=x_username, async_session=session)
+async def get_active_user(async_session: async_sessionmaker, username: str) -> User:
+    user = await get_user_by_name(name=username, async_session=async_session)
 
     if not user:
         raise HTTPException(
@@ -103,14 +99,19 @@ async def get_active_user(
 
 
 async def validate_cookie(
+    request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
-    user: Annotated[User, Depends(get_active_user)],
+    x_username: Annotated[str, Header()],
     poly_refresh_token: Annotated[str | None, Cookie()] = None,
 ) -> str:  # pragma: no cover
     if not poly_refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Empty token"
         )
+
+    user = await get_active_user(
+        async_session=request.app.state.async_session, username=x_username
+    )
 
     claims = validate_jwt(
         audience=settings.access_token_audience,
@@ -124,15 +125,20 @@ async def validate_cookie(
 
 
 async def validate_access_token(
+    request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
     token: Annotated[str, Depends(oauth2_scheme)],
-    user: Annotated[User, Depends(get_active_user)],
+    x_username: Annotated[str, Header()],
 ) -> str:  # pragma: no cover
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Empty token",
         )
+
+    user = await get_active_user(
+        async_session=request.app.state.async_session, username=x_username
+    )
 
     claims = validate_jwt(
         audience=settings.access_token_audience,
