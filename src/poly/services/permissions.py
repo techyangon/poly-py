@@ -3,15 +3,15 @@ from typing import Annotated
 from casbin import AsyncEnforcer
 from fastapi import Depends, HTTPException, Request, status
 
-from poly.rbac.models import get_enforcer
 from poly.services.auth import validate_access_token
 
 
 async def check_permission(
     request: Request,
     username: Annotated[str, Depends(validate_access_token)],
-    enforcer: Annotated[AsyncEnforcer, Depends(get_enforcer)],
 ) -> str:
+    enforcer = request.app.state.enforcer
+
     is_allowed = enforcer.enforce(
         username, request.url.path.split("/")[1], request.method
     )
@@ -24,7 +24,7 @@ async def check_permission(
     return username
 
 
-def get_permissions_by_role(enforcer: AsyncEnforcer, role: str) -> list[dict]:
+async def get_permissions_by_role(enforcer: AsyncEnforcer, role: str) -> list[dict]:
     # Returns a list in the form of [[{role_name}, {resource}, {action}]]
     role_policies = enforcer.get_filtered_named_policy("p", 0, role)
 

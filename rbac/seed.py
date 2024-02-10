@@ -27,10 +27,11 @@ async def upgrade(settings: Settings):
     policies.append(["role_admin", "locations", "GET"])
     policies.append(["role_admin", "resources", "GET"])
 
-    enforcer = await get_enforcer(settings=settings)
+    async with get_engine(settings=settings) as engine:
+        enforcer = await get_enforcer(engine=engine)
 
-    await enforcer.add_named_policies("p", policies)
-    await enforcer.add_role_for_user(settings.admin_username, "role_admin")
+        await enforcer.add_named_policies("p", policies)
+        await enforcer.add_role_for_user(settings.admin_username, "role_admin")
 
 
 async def downgrade(settings: Settings):

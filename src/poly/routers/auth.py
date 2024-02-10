@@ -1,11 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from poly.config import Settings, get_settings
-from poly.db import get_session
 from poly.db.schema import Token
 from poly.services.auth import authenticate, generate_token, validate_cookie
 
@@ -15,12 +13,14 @@ router = APIRouter(tags=["auth"])
 @router.post("/login", response_model=Token)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    request: Request,
     response: Response,
-    session: Annotated[async_sessionmaker, Depends(get_session)],
     settings: Annotated[Settings, Depends(get_settings)],
 ):
     user = await authenticate(
-        email=form_data.username, password=form_data.password, session=session
+        email=form_data.username,
+        password=form_data.password,
+        session=request.app.state.async_session,
     )
 
     access_token = generate_token(
